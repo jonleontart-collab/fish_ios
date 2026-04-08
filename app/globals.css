@@ -1,26 +1,163 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --background-elevated: #0a0a0a;
+  --surface: rgba(15, 15, 15, 0.65);
+  --surface-strong: rgba(20, 20, 20, 0.85);
+  --surface-soft: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text-main: #ffffff;
+  --text-muted: #8b95a5;
+  --text-soft: #4b5563;
+  --primary: #67e8b2;
+  --primary-strong: #05d581;
+  --accent: #5e9cff;
+  --warning: #ffb042;
+  --danger: #ff4766;
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background-elevated: var(--background-elevated);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-surface-soft: var(--surface-soft);
+  --color-border-subtle: var(--border-subtle);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-text-soft: var(--text-soft);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-accent: var(--accent);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+  color: var(--text-main);
+  scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text-main);
+  font-family: var(--font-inter), sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+  /* Premium Mesh Background */
+  background-image:
+    radial-gradient(ellipse at 15% 50%, rgba(103, 232, 178, 0.12), transparent 45%),
+    radial-gradient(ellipse at 85% 30%, rgba(94, 156, 255, 0.12), transparent 50%),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.03), transparent 25%);
+  background-attachment: fixed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  min-width: 0;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: rgba(103, 232, 178, 0.28);
+  color: #f8fcff;
+}
+
+.glass-panel {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+}
+
+.bento-card {
+  background: var(--surface-strong);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+.lift-card {
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.lift-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(103, 232, 178, 0.28);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
+}
+
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.map-shell .leaflet-container {
+  height: 100%;
+  width: 100%;
+  border-radius: 1.5rem;
+  background: #09111b;
+}
+
+.map-shell .leaflet-control-zoom {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.map-shell .leaflet-control-zoom a {
+  background: rgba(10, 21, 33, 0.86);
+  color: #ecf6ff;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.map-shell .leaflet-popup-content-wrapper,
+.map-shell .leaflet-popup-tip {
+  background: rgba(10, 21, 33, 0.96);
+  color: #ecf6ff;
+}
+
+.map-shell .leaflet-popup-content {
+  margin: 0;
+}
+
+.map-shell .leaflet-attribution-flag {
+  display: none !important;
 }
