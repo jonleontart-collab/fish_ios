@@ -121,17 +121,19 @@ async function getJoinedChats(userId: string, take?: number) {
 }
 
 export async function getCurrentUser() {
-  const current = await prisma.user.findUnique({
-    where: { handle: CURRENT_USER_HANDLE },
-  });
+  const { cookies } = await import("next/headers");
+  const cookieStore = await cookies();
+  const uid = cookieStore.get("fishflow_uid")?.value;
 
-  if (current) {
-    return current;
+  if (uid) {
+    const current = await prisma.user.findUnique({
+      where: { id: uid },
+    });
+    if (current) return current;
   }
 
-  return prisma.user.findFirst({
-    orderBy: { createdAt: "asc" },
-  });
+  // Return null if not authenticated (will trigger Onboarding in layout)
+  return null;
 }
 
 export async function getDashboardData() {
