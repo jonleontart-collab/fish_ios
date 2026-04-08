@@ -1,0 +1,16 @@
+{
+  "name": "FishFlow Premium",
+  "short_name": "FishFlow",
+  "description": "Premium Social Network for Anglers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07111c",
+  "theme_color": "#07111c",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}

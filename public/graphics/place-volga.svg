@@ -1,0 +1,18 @@
+<svg width="800" height="520" viewBox="0 0 800 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="520" rx="36" fill="url(#bg)"/>
+  <path d="M0 347C95 304 165 292 244 309C340 330 384 392 471 401C576 412 629 329 800 278V520H0V347Z" fill="url(#water)"/>
+  <path d="M42 256C149 199 230 176 313 198C388 217 436 273 510 283C594 294 682 247 764 197" stroke="rgba(255,255,255,0.34)" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="628" cy="124" r="62" fill="#A6D7FF" fill-opacity="0.16"/>
+  <path d="M571 161L654 109L727 164" stroke="rgba(255,255,255,0.22)" stroke-width="3" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="88" y1="32" x2="705" y2="489" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#081523"/>
+      <stop offset="0.5" stop-color="#0D2238"/>
+      <stop offset="1" stop-color="#17476A"/>
+    </linearGradient>
+    <linearGradient id="water" x1="111" y1="283" x2="690" y2="514" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C2338"/>
+      <stop offset="1" stop-color="#1C7B89"/>
+    </linearGradient>
+  </defs>
+</svg>

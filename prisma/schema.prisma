@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum PlaceType {
+  WILD
+  PAYED
+  CLUB
+  SHOP
+  EVENT_SOS
+}
+
+enum PlaceSource {
+  SEEDED
+  GEMINI
+  USER
+}
+
+enum TripStatus {
+  PLANNED
+  CONFIRMED
+  COMPLETED
+}
+
+enum ChatVisibility {
+  OPEN
+  PRIVATE
+}
+
+enum ShoppingItemStatus {
+  PLANNED
+  BOUGHT
+}
+
+model User {
+  id             String       @id @default(cuid())
+  name           String
+  handle         String       @unique
+  bio            String?
+  city           String?
+  experienceYears Int?
+  preferredStyles String?
+  homeWater      String?
+  avatarGradient String
+  avatarPath     String?
+  bannerPath     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  catches        Catch[]
+  trips          Trip[]
+  chatMembers    ChatMember[]
+  messages       Message[]
+  comments       CatchComment[]
+  catchLikes     CatchLike[]
+  createdPlaces  Place[]      @relation("PlaceCreator")
+  placePhotos    PlacePhoto[]
+  ownedChats     Chat[]       @relation("ChatOwner")
+  inventoryItems InventoryItem[]
+  shoppingItems  ShoppingItem[]
+  sentFriends    UserFriend[]   @relation("UserFriendsUser")
+  receivedFriends UserFriend[]  @relation("UserFriendsFriend")
+  savedRoutes    SavedRoute[]
+}
+
+model Place {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  name             String
+  shortDescription String
+  description      String
+  type             PlaceType
+  city             String
+  region           String
+  latitude         Float
+  longitude        Float
+  distanceKm       Int?
+  rating           Float
+  depthMeters      Float?
+  fishSpecies      String
+  amenities        String
+  bestMonths       String
+  coverImage       String?
+  source           PlaceSource @default(SEEDED)
+  sourceUrl        String?
+  aiSummary        String?
+  createdByUserId  String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  catches          Catch[]
+  trips            Trip[]
+  photos           PlacePhoto[]
+  savedRoutes      SavedRoute[]
+  createdBy        User?      @relation("PlaceCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([source, createdAt])
+}
+
+model Catch {
+  id                 String   @id @default(cuid())
+  userId             String
+  placeId            String
+  species            String
+  weightKg           Float?
+  lengthCm           Int?
+  bait               String?
+  note               String?
+  imagePath          String
+  recognizedSpecies  String?
+  recognizedLengthCm Int?
+  aiConfidence       Int?
+  likesCount         Int      @default(0)
+  isFeatured         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place              Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  comments           CatchComment[]
+  likes              CatchLike[]
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([placeId, createdAt])
+}
+
+model CatchLike {
+  id        String   @id @default(cuid())
+  catchId    String
+  userId     String
+  createdAt  DateTime @default(now())
+  catch      Catch     @relation(fields: [catchId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([catchId, userId])
+  @@index([userId, createdAt])
+}
+
+model CatchComment {
+  id        String   @id @default(cuid())
+  catchId    String
+  userId     String
+  body       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  catch      Catch     @relation(fields: [catchId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([catchId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model Trip {
+  id              String     @id @default(cuid())
+  userId          String
+  placeId         String
+  title           String
+  notes           String?
+  goals           String?
+  summary         String?
+  reportImagePath String?
+  startAt         DateTime
+  endAt           DateTime?
+  status          TripStatus @default(PLANNED)
+  publishedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place           Place      @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  shoppingItems   ShoppingItem[]
+
+  @@index([userId, startAt])
+  @@index([publishedAt])
+}
+
+model Chat {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  ownerId     String
+  title       String
+  description String?
+  accentColor String
+  visibility  ChatVisibility @default(OPEN)
+  locationLabel String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  owner       User         @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     ChatMember[]
+  messages    Message[]
+}
+
+model ChatMember {
+  id       String   @id @default(cuid())
+  chatId   String
+  userId   String
+  isMuted  Boolean  @default(false)
+  joinedAt DateTime @default(now())
+  chat     Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+}
+
+model PlacePhoto {
+  id        String   @id @default(cuid())
+  placeId    String
+  userId     String
+  imagePath  String
+  caption    String?
+  createdAt  DateTime @default(now())
+  place      Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([placeId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model InventoryItem {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  category  String
+  quantity  Int      @default(1)
+  notes     String?
+  imagePath String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model ShoppingItem {
+  id        String             @id @default(cuid())
+  userId    String
+  tripId    String?
+  title     String
+  notes     String?
+  quantity  Int                @default(1)
+  status    ShoppingItemStatus @default(PLANNED)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip      Trip?              @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, createdAt])
+  @@index([tripId])
+}
+
+model UserFriend {
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
+  status    String   @default("ACCEPTED")
+  createdAt DateTime @default(now())
+
+  user   User @relation("UserFriendsUser", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("UserFriendsFriend", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+model SavedRoute {
+  id               String   @id @default(cuid())
+  userId           String
+  placeId          String
+  name             String
+  geojson          String
+  offlineAvailable Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([placeId])
+}

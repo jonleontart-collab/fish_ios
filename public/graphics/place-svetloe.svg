@@ -1,0 +1,19 @@
+<svg width="800" height="520" viewBox="0 0 800 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="520" rx="36" fill="url(#bg)"/>
+  <ellipse cx="522" cy="136" rx="148" ry="82" fill="#D9F6FF" fill-opacity="0.12"/>
+  <path d="M0 365C118 306 236 291 342 327C439 360 531 433 639 423C713 416 752 376 800 338V520H0V365Z" fill="url(#lake)"/>
+  <path d="M0 0H179L231 217H0V0Z" fill="#17354A" fill-opacity="0.42"/>
+  <path d="M704 0H800V278L668 246L704 0Z" fill="#163449" fill-opacity="0.42"/>
+  <path d="M91 240C173 208 252 203 321 228C390 253 459 314 542 320C601 325 664 305 726 266" stroke="rgba(255,255,255,0.28)" stroke-width="3" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="122" y1="29" x2="711" y2="501" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#08161F"/>
+      <stop offset="0.54" stop-color="#103142"/>
+      <stop offset="1" stop-color="#1E5A6B"/>
+    </linearGradient>
+    <linearGradient id="lake" x1="170" y1="289" x2="657" y2="523" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#12334B"/>
+      <stop offset="1" stop-color="#67C0B9"/>
+    </linearGradient>
+  </defs>
+</svg>
