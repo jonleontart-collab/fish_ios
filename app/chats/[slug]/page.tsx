@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, MessageSquare, Users } from "lucide-react";
+import { ArrowLeft, MapPin, MessageSquare, Shield, Users } from "lucide-react";
 
 import { ChatThreadClient } from "@/components/ChatThreadClient";
 import { withBasePath } from "@/lib/app-paths";
@@ -15,37 +15,37 @@ export const dynamic = "force-dynamic";
 const translations: TranslationMap<{
   back: string;
   otherChats: string;
-  quickSwitch: string;
+  support: string;
   members: (count: number) => string;
 }> = {
   ru: {
     back: "Назад к чатам",
     otherChats: "Другие чаты",
-    quickSwitch: "Быстрый переход",
+    support: "Поддержка",
     members: (count) => `${count} участников`,
   },
   en: {
     back: "Back to chats",
     otherChats: "Other chats",
-    quickSwitch: "Quick switch",
+    support: "Support",
     members: (count) => `${count} members`,
   },
   es: {
     back: "Volver a chats",
     otherChats: "Otros chats",
-    quickSwitch: "Cambio rápido",
+    support: "Soporte",
     members: (count) => `${count} participantes`,
   },
   fr: {
     back: "Retour aux chats",
     otherChats: "Autres chats",
-    quickSwitch: "Accès rapide",
+    support: "Support",
     members: (count) => `${count} membres`,
   },
   pt: {
     back: "Voltar aos chats",
     otherChats: "Outros chats",
-    quickSwitch: "Troca rápida",
+    support: "Suporte",
     members: (count) => `${count} membros`,
   },
 };
@@ -87,6 +87,12 @@ export default async function ChatThreadPage({
             <div className="flex items-center gap-2 text-sm text-text-muted">
               <MessageSquare size={15} />
               <span>{chatVisibilityLabel(data.activeChat.visibility, lang)}</span>
+              {data.activeChat.isSystem ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/12 px-2 py-1 text-[10px] font-semibold text-primary">
+                  <Shield size={11} />
+                  {t.support}
+                </span>
+              ) : null}
             </div>
             <h1 className="font-display text-[28px] font-semibold text-text-main">{chatTitle}</h1>
             {chatDescription ? <p className="text-sm leading-6 text-text-muted">{chatDescription}</p> : null}
@@ -110,10 +116,7 @@ export default async function ChatThreadPage({
 
       {data.chats.length > 1 ? (
         <section className="space-y-3">
-          <div>
-            <div className="text-sm text-text-muted">{t.otherChats}</div>
-            <h2 className="font-display text-2xl font-semibold text-text-main">{t.quickSwitch}</h2>
-          </div>
+          <div className="text-sm text-text-muted">{t.otherChats}</div>
           <div className="space-y-3">
             {data.chats
               .filter((chatItem) => chatItem.id !== data.activeChat?.id)

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Trophy } from "lucide-react";
+import { ArrowLeft, CalendarDays } from "lucide-react";
 
 import { CatchCard } from "@/components/CatchCard";
 import { DirectChatButton } from "@/components/DirectChatButton";
@@ -9,6 +9,7 @@ import { FriendsDrawer } from "@/components/FriendsDrawer";
 import { ProfileInventoryShowcase } from "@/components/ProfileInventoryShowcase";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TripReportCard } from "@/components/TripReportCard";
+import { UserAvatar } from "@/components/UserAvatar";
 import { withBasePath } from "@/lib/app-paths";
 import { type TranslationMap } from "@/lib/i18n";
 import { getServerLanguage } from "@/lib/i18n-server";
@@ -266,17 +267,13 @@ export default async function PublicProfilePage({
         </div>
 
         <div className="relative z-10 -mt-12 px-5 text-center">
-          {user.avatarPath ? (
-            <img
-              src={withBasePath(user.avatarPath)}
-              alt={user.name}
-              className="mx-auto h-24 w-24 rounded-full border-4 border-background bg-surface object-cover shadow-2xl"
-            />
-          ) : (
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-background border-dashed bg-black/20 text-center text-[11px] font-semibold text-text-muted shadow-2xl">
-              {t.noPhoto}
-            </div>
-          )}
+          <UserAvatar
+            name={user.name}
+            avatarPath={user.avatarPath}
+            className="mx-auto h-24 w-24 border-4 border-background shadow-2xl"
+            fallbackClassName="border-dashed bg-black/20"
+            iconSize={24}
+          />
 
           <h1 className="mt-4 font-display text-2xl font-bold text-text-main">{user.name}</h1>
           <p className="text-[15px] font-medium text-primary">@{user.handle}</p>
@@ -344,7 +341,7 @@ export default async function PublicProfilePage({
       ) : null}
 
       <section className="space-y-4">
-        <SectionHeader eyebrow={t.catches} title={t.recentCatches} titleClassName="text-[20px]" />
+        <SectionHeader eyebrow={t.catches} />
 
         {catches.length > 0 ? (
           <div className="space-y-4">
@@ -362,8 +359,6 @@ export default async function PublicProfilePage({
       <section className="space-y-4">
         <SectionHeader
           eyebrow={t.trips}
-          title={t.recentTrips}
-          titleClassName="text-[20px]"
           action={
             user.trips.length > 0 ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-white/6 px-3 py-2 text-sm font-semibold text-text-muted">

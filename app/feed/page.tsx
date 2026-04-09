@@ -157,7 +157,7 @@ export default async function FeedPage() {
 
       {recommendedCatches.length > 0 ? (
         <section className="space-y-3">
-          <SectionHeader eyebrow={t.recommended} title={t.recommendedTitle} titleClassName="text-[20px]" />
+          <SectionHeader eyebrow={t.recommended} />
           <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
             {recommendedCatches.map((catchItem) => {
               const preview = catchItem.mediaItems[0];

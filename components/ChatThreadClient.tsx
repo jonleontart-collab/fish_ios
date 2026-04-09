@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { ChatComposer } from "@/components/ChatComposer";
 import { useLanguage } from "@/components/LanguageProvider";
+import { UserAvatar } from "@/components/UserAvatar";
 import { apiPath, withBasePath } from "@/lib/app-paths";
 import { formatFeedDate } from "@/lib/format";
 
@@ -80,13 +81,13 @@ export function ChatThreadClient({
                   href={`/profile/${message.user.handle}`}
                   className="mr-2 mt-auto flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-surface-strong text-[10px] font-bold text-white"
                 >
-                  {message.user.avatarPath ? (
-                    <img src={withBasePath(message.user.avatarPath)} alt={message.user.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${message.user.avatarGradient}`}>
-                      {message.user.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <UserAvatar
+                    name={message.user.name}
+                    avatarPath={message.user.avatarPath}
+                    className="h-full w-full"
+                    fallbackClassName="border-0 bg-white/8"
+                    iconSize={14}
+                  />
                 </Link>
               ) : null}
               <div

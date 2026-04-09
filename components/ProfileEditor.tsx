@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Drawer } from "vaul";
-import { Loader2, Pencil, Save, Upload, X } from "lucide-react";
+import { ImagePlus, Loader2, Pencil, Save, Upload, X } from "lucide-react";
 
 import { useLanguage } from "@/components/LanguageProvider";
 import { useToast } from "@/components/ToastProvider";
@@ -309,7 +309,12 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
                   unoptimized={Boolean(bannerPreview)}
                 />
               ) : (
-                <div className="h-32 w-full bg-[radial-gradient(circle_at_top_right,rgba(103,232,178,0.32),transparent_35%),linear-gradient(135deg,#08131f,#183449)] transition-opacity group-hover:opacity-80" />
+                <div className="flex h-32 w-full items-center justify-center bg-[radial-gradient(circle_at_top_right,rgba(103,232,178,0.32),transparent_35%),linear-gradient(135deg,#08131f,#183449)] transition-opacity group-hover:opacity-80">
+                  <div className="flex flex-col items-center gap-2 rounded-[22px] border border-white/10 bg-black/20 px-5 py-4 text-center text-white/80 backdrop-blur">
+                    <ImagePlus size={22} className="text-primary" />
+                    <span className="text-sm font-semibold">{t.updateBanner}</span>
+                  </div>
+                </div>
               )}
               <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                 <div className="flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur">
@@ -336,7 +341,8 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
                     unoptimized={Boolean(avatarPreview)}
                   />
                 ) : (
-                  <div className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-2 border-dashed border-white/10 bg-black/20 text-center text-[11px] font-semibold text-text-muted shadow-lg">
+                  <div className="flex h-[76px] w-[76px] flex-col items-center justify-center rounded-full border-2 border-dashed border-white/10 bg-black/20 text-center text-[11px] font-semibold text-text-muted shadow-lg">
+                    <ImagePlus size={18} className="mb-1 text-primary" />
                     {t.noPhoto}
                   </div>
                 )}

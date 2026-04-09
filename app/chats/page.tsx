@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, MessageSquare, PlusCircle, Shield, Users } from "lucide-react";
+import { ArrowRight, Shield, Users } from "lucide-react";
 
 import { CreateChatForm } from "@/components/CreateChatForm";
 import { FriendsDrawer } from "@/components/FriendsDrawer";
 import { SectionHeader } from "@/components/SectionHeader";
 import { JoinChatButton } from "@/components/JoinChatButton";
+import { UserAvatar } from "@/components/UserAvatar";
 import { getChatCounterpart, getChatDisplayDescription, getChatDisplayTitle, getMessagePreviewText } from "@/lib/chat";
 import { withBasePath } from "@/lib/app-paths";
 import { chatVisibilityLabel, formatFeedDate } from "@/lib/format";
@@ -138,33 +139,32 @@ export default async function ChatsPage() {
 
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
-      <header className="space-y-1">
-        <h1 className="font-display text-[32px] font-bold tracking-tight text-white drop-shadow-sm">{t.title}</h1>
-        <p className="text-[15px] font-medium text-text-muted">{t.subtitle}</p>
-      </header>
+      <header className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="font-display text-[32px] font-bold tracking-tight text-white drop-shadow-sm">{t.title}</h1>
+          <p className="text-[15px] font-medium text-text-muted">{t.subtitle}</p>
+        </div>
 
-      <FriendsDrawer title={t.friends} subtitle={t.friendsTitle} friends={data.friends}>
-        <button
-          type="button"
-          className="glass-panel flex w-full items-center justify-between rounded-[26px] border border-border-subtle px-4 py-4 text-left"
-        >
-          <div>
-            <div className="text-sm text-text-muted">{t.friends}</div>
-            <div className="mt-1 text-xl font-semibold text-text-main">{t.friendsTitle}</div>
-            <div className="mt-1 text-sm text-text-muted">
-              {data.friends.length > 0 ? `${data.friends.length} ${t.friends.toLowerCase()}` : t.noFriends}
-            </div>
-          </div>
-          <div className="rounded-full border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-primary">
-            {t.openFriends}
-          </div>
-        </button>
-      </FriendsDrawer>
+        <FriendsDrawer title={t.friends} subtitle={t.friends} friends={data.friends}>
+          <button
+            type="button"
+            className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/6 text-text-main transition hover:bg-white/10"
+            aria-label={t.friends}
+          >
+            <Users size={20} />
+            {data.friends.length > 0 ? (
+              <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-slate-950">
+                {data.friends.length > 9 ? "9+" : data.friends.length}
+              </span>
+            ) : null}
+          </button>
+        </FriendsDrawer>
+      </header>
 
       <CreateChatForm />
 
       <section className="space-y-3">
-        <SectionHeader eyebrow={t.yours} title={t.yoursTitle} titleClassName="text-[20px]" />
+        <SectionHeader eyebrow={t.yours} />
 
         <div className="space-y-3">
           {data.chats.length > 0 ? (
@@ -177,28 +177,28 @@ export default async function ChatsPage() {
                 <Link
                   key={chatItem.id}
                   href={`/chats/${chatItem.slug}`}
-                  className="glass-panel block rounded-[26px] border border-border-subtle p-4 transition hover:border-primary/20"
+                  className={`glass-panel block rounded-[26px] border p-4 transition hover:border-primary/20 ${
+                    chatItem.isSystem ? "border-primary/20 bg-primary/[0.06]" : "border-border-subtle"
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
                       <div
-                        className="mt-1 flex h-13 w-13 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10"
-                        style={{ backgroundColor: `${chatItem.accentColor}18` }}
+                        className={`mt-1 flex h-13 w-13 shrink-0 items-center justify-center overflow-hidden rounded-full border ${
+                          chatItem.isSystem ? "border-primary/25 bg-primary/10" : "border-white/10"
+                        }`}
+                        style={chatItem.isSystem ? undefined : { backgroundColor: `${chatItem.accentColor}18` }}
                       >
-                        {showCounterpartAvatar && counterpart.avatarPath ? (
-                          <img
-                            src={withBasePath(counterpart.avatarPath)}
-                            alt={counterpart.name}
-                            className="h-full w-full object-cover"
-                          />
+                        {chatItem.isSystem ? (
+                          <Shield size={18} className="text-primary" />
                         ) : showCounterpartAvatar && counterpart ? (
-                          <div
-                            className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${counterpart.avatarGradient}`}
-                          >
-                            <span className="text-sm font-bold text-slate-950">
-                              {counterpart.name.slice(0, 1).toUpperCase()}
-                            </span>
-                          </div>
+                          <UserAvatar
+                            name={counterpart.name}
+                            avatarPath={counterpart.avatarPath}
+                            className="h-full w-full"
+                            fallbackClassName="border-0 bg-white/8"
+                            iconSize={16}
+                          />
                         ) : (
                           <Image
                             src={withBasePath("/images/logo_chat.png")}
@@ -215,7 +215,7 @@ export default async function ChatsPage() {
                             {getChatDisplayTitle(chatItem, data.user.id)}
                           </div>
                           {chatItem.isSystem ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/12 px-2 py-1 text-[10px] font-semibold text-primary">
                               <Shield size={11} />
                               {t.support}
                             </span>
@@ -253,7 +253,7 @@ export default async function ChatsPage() {
       </section>
 
       <section className="space-y-3">
-        <SectionHeader eyebrow={t.openChats} title={t.openChatsTitle} titleClassName="text-[20px]" />
+        <SectionHeader eyebrow={t.openChats} />
         <div className="space-y-3">
           {data.discoverableChats.length > 0 ? (
             data.discoverableChats.map((chatItem) => (
@@ -300,11 +300,6 @@ export default async function ChatsPage() {
           )}
         </div>
       </section>
-
-      <Link href="/explore" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
-        <PlusCircle size={16} />
-        {t.addPlace}
-      </Link>
     </div>
   );
 }

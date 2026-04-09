@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ImagePlus, MapPin, MoreHorizontal, Trophy } from "lucide-react";
 
 import { CatchEngagementBar } from "@/components/CatchEngagementBar";
 import { useLanguage } from "@/components/LanguageProvider";
+import { UserAvatar } from "@/components/UserAvatar";
 import { withBasePath } from "@/lib/app-paths";
 import { formatFeedDate, formatLength, formatWeight } from "@/lib/format";
 import type { TranslationMap } from "@/lib/i18n";
@@ -153,10 +154,6 @@ export function CatchCard({ catchItem, showUser = true, showActions = true }: Ca
   const [activeIndex, setActiveIndex] = useState(0);
   const activeMedia = mediaItems[activeIndex] ?? mediaItems[0] ?? null;
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [catchItem.id]);
-
   function moveSlide(direction: -1 | 1) {
     setActiveIndex((current) => {
       if (mediaItems.length <= 1) {
@@ -179,17 +176,13 @@ export function CatchCard({ catchItem, showUser = true, showActions = true }: Ca
         <div className="flex items-center justify-between px-4 py-3.5 sm:px-5">
           <div className="flex w-full items-center gap-3">
             <Link href={`/profile/${catchItem.user.handle}`} className="relative shrink-0 overflow-hidden rounded-full border border-white/10 group">
-              {catchItem.user.avatarPath ? (
-                <img
-                  src={withBasePath(catchItem.user.avatarPath)}
-                  alt={catchItem.user.name}
-                  className="h-10 w-10 object-cover transition-transform group-hover:scale-105"
-                />
-              ) : (
-                <div className={`flex h-10 w-10 items-center justify-center bg-gradient-to-br ${catchItem.user.avatarGradient}`}>
-                  <span className="text-[15px] font-bold text-white">{catchItem.user.name.slice(0, 1).toUpperCase()}</span>
-                </div>
-              )}
+              <UserAvatar
+                name={catchItem.user.name}
+                avatarPath={catchItem.user.avatarPath}
+                className="h-10 w-10 transition-transform group-hover:scale-105"
+                fallbackClassName="bg-white/8"
+                iconSize={16}
+              />
             </Link>
 
             <div className="min-w-0 flex-1">

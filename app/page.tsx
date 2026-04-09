@@ -7,6 +7,7 @@ import { HomeFishingEventsWidget } from "@/components/HomeFishingEventsWidget";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeTripsWidget } from "@/components/HomeTripsWidget";
 import { SectionHeader } from "@/components/SectionHeader";
+import { UserAvatar } from "@/components/UserAvatar";
 import { withBasePath } from "@/lib/app-paths";
 import { type TranslationMap } from "@/lib/i18n";
 import { getServerLanguage } from "@/lib/i18n-server";
@@ -104,23 +105,13 @@ export default async function Home() {
             <div className="text-sm font-semibold text-white">@{dashboard.user.handle}</div>
             <div className="text-xs text-text-muted">{dashboard.user.name}</div>
           </div>
-          {dashboard.user.avatarPath ? (
-            <Image
-              src={withBasePath(dashboard.user.avatarPath)}
-              alt={dashboard.user.name}
-              width={44}
-              height={44}
-              className="h-11 w-11 rounded-full object-cover ring-2 ring-transparent transition-all group-hover:ring-primary/50"
-            />
-          ) : (
-            <div
-              className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br ${dashboard.user.avatarGradient} ring-2 ring-transparent transition-all group-hover:ring-primary/50`}
-            >
-              <span className="font-display text-[15px] font-semibold text-slate-950">
-                {dashboard.user.name.slice(0, 1)}
-              </span>
-            </div>
-          )}
+          <UserAvatar
+            name={dashboard.user.name}
+            avatarPath={dashboard.user.avatarPath}
+            className="h-11 w-11 ring-2 ring-transparent transition-all group-hover:ring-primary/50"
+            fallbackClassName="border border-white/10 bg-white/6"
+            iconSize={18}
+          />
         </Link>
       </header>
 
@@ -144,7 +135,7 @@ export default async function Home() {
       </div>
 
       <div className="mb-4 mt-8 px-4 sm:px-0">
-        <SectionHeader eyebrow={t.activityLabel} title={t.activityFeed} />
+        <SectionHeader eyebrow={t.activityLabel} />
       </div>
 
       <div className="sm:space-y-6">

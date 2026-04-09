@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useTransition } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Loader2, MessageCircle, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { useLanguage } from "@/components/LanguageProvider";
-import { apiPath, withBasePath } from "@/lib/app-paths";
+import { UserAvatar } from "@/components/UserAvatar";
+import { apiPath } from "@/lib/app-paths";
 import { formatShortDate } from "@/lib/format";
 import type { TranslationMap } from "@/lib/i18n";
 
@@ -117,13 +117,13 @@ export function CatchComments({
           comments.map((comment) => (
             <div key={comment.id} className="flex gap-3 px-5 py-4 transition-colors hover:bg-white/[0.02]">
               <Link href={`/profile/${comment.user.handle}`} className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-surface-strong text-sm font-bold text-white">
-                {comment.user.avatarPath ? (
-                  <Image src={withBasePath(comment.user.avatarPath)} alt={comment.user.name} width={40} height={40} className="h-full w-full object-cover" />
-                ) : (
-                  <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${comment.user.avatarGradient}`}>
-                    {comment.user.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <UserAvatar
+                  name={comment.user.name}
+                  avatarPath={comment.user.avatarPath}
+                  className="h-full w-full"
+                  fallbackClassName="border-0 bg-white/8"
+                  iconSize={16}
+                />
               </Link>
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="flex items-baseline justify-between gap-2">

@@ -201,8 +201,6 @@ export function HomeFishingEventsWidget() {
       <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
         <SectionHeader
           eyebrow={t.section}
-          title={t.title}
-          titleClassName="text-[20px]"
           action={
             events.length > 0 ? (
               <button

@@ -4,6 +4,7 @@ import { Drawer } from "vaul";
 import { Users, X } from "lucide-react";
 
 import { DirectChatButton } from "@/components/DirectChatButton";
+import { UserAvatar } from "@/components/UserAvatar";
 import { withBasePath } from "@/lib/app-paths";
 
 type FriendItem = {
@@ -62,19 +63,13 @@ export function FriendsDrawer({
                     key={friend.id}
                     className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-black/24 px-4 py-4 backdrop-blur-xl"
                   >
-                    {friend.avatarPath ? (
-                      <img
-                        src={withBasePath(friend.avatarPath)}
-                        alt={friend.name}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${friend.avatarGradient} text-sm font-bold text-slate-950`}
-                      >
-                        {friend.name.slice(0, 1).toUpperCase()}
-                      </div>
-                    )}
+                    <UserAvatar
+                      name={friend.name}
+                      avatarPath={friend.avatarPath}
+                      className="h-12 w-12"
+                      fallbackClassName="border border-white/10 bg-white/8"
+                      iconSize={18}
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold text-white">{friend.name}</div>
                       <div className="truncate text-sm text-text-muted">

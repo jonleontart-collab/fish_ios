@@ -10,7 +10,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:init": "prisma db push && npm run db:seed",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:clean-demo": "tsx prisma/clean-demo.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

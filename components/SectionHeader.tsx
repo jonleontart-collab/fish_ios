@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 type SectionHeaderProps = {
   eyebrow?: string;
-  title: string;
+  title?: string;
   description?: string;
   action?: ReactNode;
   className?: string;
@@ -25,9 +25,11 @@ export function SectionHeader({
             {eyebrow}
           </div>
         ) : null}
-        <div className={`mt-1 text-[22px] font-semibold tracking-tight text-text-main ${titleClassName}`.trim()}>
-          {title}
-        </div>
+        {title ? (
+          <div className={`mt-1 text-[22px] font-semibold tracking-tight text-text-main ${titleClassName}`.trim()}>
+            {title}
+          </div>
+        ) : null}
         {description ? (
           <div className="mt-1 max-w-[26rem] text-sm leading-6 text-text-muted">{description}</div>
         ) : null}

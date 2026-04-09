@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Globe2, KeyRound, ShieldCheck, UserRound } from "lucide-react";
 
@@ -438,13 +437,14 @@ export default function Onboarding() {
                 />
                 <span className="text-sm leading-6 text-[#b8c4d2]">
                   {t.termsLabel}{" "}
-                  <Link
+                  <a
                     href={withBasePath("/legal/terms-and-privacy.html")}
                     target="_blank"
+                    rel="noreferrer"
                     className="font-semibold text-primary underline-offset-4 hover:underline"
                   >
                     {t.termsLink}
-                  </Link>
+                  </a>
                   .
                 </span>
               </label>
@@ -467,10 +467,15 @@ export default function Onboarding() {
           </button>
         </form>
 
-        <div className="mt-5 flex items-center gap-2 text-xs text-[#92a7bf]">
+        <a
+          href={withBasePath("/legal/terms-and-privacy.html")}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 flex items-center gap-2 text-xs text-[#92a7bf] transition hover:text-white"
+        >
           <ShieldCheck size={14} className="text-primary" />
           <span>{t.termsLink}</span>
-        </div>
+        </a>
       </div>
     </div>
   );

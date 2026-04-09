@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, ShoppingBag, Trophy, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Trophy, Users } from "lucide-react";
 
 import { CatchCard } from "@/components/CatchCard";
 import { FriendsDrawer } from "@/components/FriendsDrawer";
@@ -9,6 +9,7 @@ import { ProfileEditor } from "@/components/ProfileEditor";
 import { ProfileInventoryShowcase } from "@/components/ProfileInventoryShowcase";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TripReportCard } from "@/components/TripReportCard";
+import { UserAvatar } from "@/components/UserAvatar";
 import { withBasePath } from "@/lib/app-paths";
 import { shoppingStatusLabel } from "@/lib/format";
 import { type TranslationMap } from "@/lib/i18n";
@@ -213,13 +214,13 @@ export default async function ProfilePage() {
         </div>
 
         <div className="relative z-10 -mt-12 px-5 text-center">
-          {profile.user.avatarPath ? (
-            <img src={withBasePath(profile.user.avatarPath)} alt={profile.user.name} className="mx-auto h-28 w-28 rounded-full border-4 border-background bg-surface object-cover shadow-2xl" />
-          ) : (
-            <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border-4 border-background border-dashed bg-black/20 text-sm font-semibold text-text-muted shadow-2xl">
-              {t.noPhoto}
-            </div>
-          )}
+          <UserAvatar
+            name={profile.user.name}
+            avatarPath={profile.user.avatarPath}
+            className="mx-auto h-28 w-28 border-4 border-background shadow-2xl"
+            fallbackClassName="border-dashed bg-black/20"
+            iconSize={28}
+          />
 
           <h1 className="mt-4 font-display text-[26px] font-bold text-white">{profile.user.name}</h1>
           <p className="text-[15px] font-bold text-primary">@{profile.user.handle}</p>
@@ -256,13 +257,14 @@ export default async function ProfilePage() {
                   {profile.friends.length > 0 ? (
                     <div className="flex -space-x-2">
                       {profile.friends.slice(0, 2).map((friend) =>
-                        friend.avatarPath ? (
-                          <img key={friend.id} src={withBasePath(friend.avatarPath)} alt="" className="h-6 w-6 rounded-full border border-background bg-zinc-800 object-cover" />
-                        ) : (
-                          <div key={friend.id} className={`flex h-6 w-6 items-center justify-center rounded-full border border-background bg-gradient-to-br ${friend.avatarGradient} text-[10px] font-bold text-slate-950`}>
-                            {friend.name.slice(0, 1).toUpperCase()}
-                          </div>
-                        ),
+                        <UserAvatar
+                          key={friend.id}
+                          name={friend.name}
+                          avatarPath={friend.avatarPath}
+                          className="h-6 w-6 border border-background"
+                          fallbackClassName="bg-white/8"
+                          iconSize={11}
+                        />,
                       )}
                     </div>
                   ) : null}
@@ -284,7 +286,7 @@ export default async function ProfilePage() {
       </div>
 
       <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-        <SectionHeader eyebrow={t.about} title={t.profileActions} titleClassName="text-[20px]" />
+        <SectionHeader eyebrow={t.about} />
         <div className="mt-4 grid gap-3">
           <div className="rounded-[22px] border border-border-subtle bg-white/4 p-4">
             <div className="text-sm text-text-muted">{t.experience}</div>
@@ -318,7 +320,7 @@ export default async function ProfilePage() {
       <InventoryManager items={profile.inventoryItems} />
 
       <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-        <SectionHeader eyebrow={t.shoppingList} title={t.shoppingList} titleClassName="text-[20px]" />
+        <SectionHeader eyebrow={t.shoppingList} />
         <div className="mt-4 space-y-3">
           {profile.shoppingItems.length > 0 ? (
             profile.shoppingItems.map((item) => (
@@ -342,8 +344,6 @@ export default async function ProfilePage() {
       <section className="space-y-4">
         <SectionHeader
           eyebrow={t.catches}
-          title={t.latestPosts}
-          titleClassName="text-[20px]"
           action={
             <Link href="/add" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10">
               {t.add}
@@ -364,8 +364,6 @@ export default async function ProfilePage() {
       <section className="space-y-4">
         <SectionHeader
           eyebrow={t.trips}
-          title={t.planAndReports}
-          titleClassName="text-[20px]"
           action={
             <Link href="/trips" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10">
               {t.allTrips}

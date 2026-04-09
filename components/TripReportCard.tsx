@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { CalendarDays, MapPin, Route } from "lucide-react";
 
+import { UserAvatar } from "@/components/UserAvatar";
 import { formatDateTime, tripStatusLabel } from "@/lib/format";
 import { type TranslationMap } from "@/lib/i18n";
 import { getServerLanguage } from "@/lib/i18n-server";
@@ -21,6 +22,7 @@ type TripReportCardProps = {
       name: string;
       handle: string;
       avatarGradient: string;
+      avatarPath?: string | null;
     };
     place: {
       name: string;
@@ -113,11 +115,13 @@ export async function TripReportCard({ trip }: TripReportCardProps) {
 
       <div className="space-y-4 p-4">
         <div className="flex items-center gap-3">
-          <div
-            className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br ${trip.user.avatarGradient}`}
-          >
-            <span className="font-display text-sm font-semibold text-slate-950">{trip.user.name.slice(0, 1)}</span>
-          </div>
+          <UserAvatar
+            name={trip.user.name}
+            avatarPath={trip.user.avatarPath}
+            className="h-11 w-11"
+            fallbackClassName="border border-white/10 bg-white/8"
+            iconSize={18}
+          />
           <div>
             <div className="font-semibold text-text-main">{trip.user.name}</div>
             <div className="text-sm text-text-muted">{trip.place.city}</div>
