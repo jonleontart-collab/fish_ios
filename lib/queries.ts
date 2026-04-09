@@ -2,6 +2,7 @@ import { subDays } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { splitPipeList } from "@/lib/format";
 import { getFriendsForUser } from "@/lib/social";
+import { ensureSupportChatForUser } from "@/lib/support";
 
 const REAL_PLACE_FILTER = {
   source: {
@@ -80,6 +81,34 @@ function mapCatchWithEngagement<
   };
 }
 
+function mapCatchMedia<
+  T extends {
+    imagePath: string;
+    media?: Array<{
+      id: string;
+      mediaPath: string;
+      mediaType: "IMAGE" | "VIDEO";
+      sortOrder: number;
+    }>;
+  },
+>(item: T) {
+  const fallbackMedia = item.imagePath
+    ? [
+        {
+          id: `${"id" in item && typeof item.id === "string" ? item.id : "legacy"}-cover`,
+          mediaPath: item.imagePath,
+          mediaType: "IMAGE" as const,
+          sortOrder: 0,
+        },
+      ]
+    : [];
+
+  return {
+    ...item,
+    mediaItems: item.media && item.media.length > 0 ? [...item.media].sort((left, right) => left.sortOrder - right.sortOrder) : fallbackMedia,
+  };
+}
+
 async function getRequiredCurrentUser() {
   const user = await getCurrentUser();
 
@@ -140,9 +169,7 @@ async function getJoinedChats(userId: string, take?: number) {
         },
       },
     },
-    orderBy: {
-      updatedAt: "desc",
-    },
+    orderBy: [{ isSystem: "desc" }, { updatedAt: "desc" }],
     ...(typeof take === "number" ? { take } : {}),
   });
 }
@@ -165,6 +192,7 @@ export async function getCurrentUser() {
 
 export async function getDashboardData() {
   const user = await getRequiredCurrentUser();
+  await ensureSupportChatForUser(user.id);
 
   const [
     upcomingTrips,
@@ -213,6 +241,11 @@ export async function getDashboardData() {
       include: {
         user: true,
         place: true,
+        media: {
+          orderBy: {
+            sortOrder: "asc",
+          },
+        },
         likes: {
           where: {
             userId: user.id,
@@ -322,7 +355,7 @@ export async function getDashboardData() {
       ...trip,
       place: withDisplayImage(trip.place),
     })),
-    recentCatches: recentCatchesRaw.map((item) => mapCatchWithEngagement(item)),
+    recentCatches: recentCatchesRaw.map((item) => mapCatchMedia(mapCatchWithEngagement(item))),
     nearbyPlaces: nearbyPlaces.map((place) => mapPlaceLists(withDisplayImage(place))),
     activeChats,
     pendingShopping,
@@ -339,6 +372,7 @@ export async function getDashboardData() {
 
 export async function getFeedPageData() {
   const user = await getRequiredCurrentUser();
+  await ensureSupportChatForUser(user.id);
   const [catchesRaw, tripReports, catchReposts] = await Promise.all([
     prisma.catch.findMany({
       where: {
@@ -347,6 +381,11 @@ export async function getFeedPageData() {
       include: {
         user: true,
         place: true,
+        media: {
+          orderBy: {
+            sortOrder: "asc",
+          },
+        },
         likes: {
           where: {
             userId: user.id,
@@ -408,6 +447,11 @@ export async function getFeedPageData() {
           include: {
             user: true,
             place: true,
+            media: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+            },
             likes: {
               where: {
                 userId: user.id,
@@ -441,7 +485,7 @@ export async function getFeedPageData() {
     }),
   ]);
 
-  const catches = catchesRaw.map((item) => mapCatchWithEngagement(item));
+  const catches = catchesRaw.map((item) => mapCatchMedia(mapCatchWithEngagement(item)));
   const feedItems = [
     ...catches.map((item) => ({
       type: "catch" as const,
@@ -460,7 +504,7 @@ export async function getFeedPageData() {
       type: "repost" as const,
       sortDate: item.createdAt,
       catchItem: {
-        ...mapCatchWithEngagement(item.catch),
+        ...mapCatchMedia(mapCatchWithEngagement(item.catch)),
         repostMeta: {
           user: item.user,
           createdAt: item.createdAt,
@@ -483,6 +527,11 @@ export async function getCatchPostData(catchId: string) {
     include: {
       user: true,
       place: true,
+      media: {
+        orderBy: {
+          sortOrder: "asc",
+        },
+      },
       comments: {
         include: {
           user: true,
@@ -523,7 +572,7 @@ export async function getCatchPostData(catchId: string) {
 
   return {
     user,
-    catchItem: mapCatchWithEngagement(catchItem),
+    catchItem: mapCatchMedia(mapCatchWithEngagement(catchItem)),
   };
 }
 
@@ -587,6 +636,11 @@ export async function getPlaceDetails(slug: string) {
         include: {
           user: true,
           place: true,
+          media: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+          },
           likes: user
             ? {
                 where: {
@@ -629,7 +683,7 @@ export async function getPlaceDetails(slug: string) {
 
   return {
     ...mapPlaceLists(withDisplayImage(place)),
-    catches: place.catches.map((item) => mapCatchWithEngagement(item)),
+    catches: place.catches.map((item) => mapCatchMedia(mapCatchWithEngagement(item))),
   };
 }
 
@@ -649,10 +703,12 @@ export async function getPlaceOptions() {
 
 export async function getChatsInboxData() {
   const user = await getRequiredCurrentUser();
+  await ensureSupportChatForUser(user.id);
   const [chats, discoverableChats, friends] = await Promise.all([
     getJoinedChats(user.id),
     prisma.chat.findMany({
       where: {
+        isSystem: false,
         visibility: "OPEN",
         members: {
           none: {
@@ -696,10 +752,12 @@ export async function getChatsInboxData() {
 
 export async function getChatThreadData(slug: string) {
   const user = await getRequiredCurrentUser();
+  await ensureSupportChatForUser(user.id);
   const [chats, discoverableChats, activeChat] = await Promise.all([
     getJoinedChats(user.id),
     prisma.chat.findMany({
       where: {
+        isSystem: false,
         visibility: "OPEN",
         members: {
           none: {
@@ -835,6 +893,11 @@ export async function getProfilePageData() {
         include: {
           user: true,
           place: true,
+          media: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+          },
           likes: { where: { userId: user.id }, select: { id: true } },
           reposts: { where: { userId: user.id }, select: { id: true } },
           _count: { select: { comments: true, likes: true, reposts: true } },
@@ -861,7 +924,7 @@ export async function getProfilePageData() {
       getFriendsForUser(user.id),
     ]);
 
-  const catches = catchesRaw.map((item) => mapCatchWithEngagement(item));
+  const catches = catchesRaw.map((item) => mapCatchMedia(mapCatchWithEngagement(item)));
 
   return {
     user,

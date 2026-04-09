@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight, ExternalLink, Loader2, MapPin, Sparkles } from "lucide-react";
 import { Drawer } from "vaul";
 
+import { SectionHeader } from "@/components/SectionHeader";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useLocation } from "@/components/LocationProvider";
 import { apiPath, withBasePath } from "@/lib/app-paths";
@@ -23,59 +24,59 @@ const translations: TranslationMap<{
   fallback: string;
 }> = {
   ru: {
-    section: "Мероприятия",
-    title: "Рыболовные события рядом",
+    section: "События",
+    title: "События рядом",
     loading: "Загружаем ближайшие события...",
     resolving: "Сначала определим страну и город по геолокации или IP.",
     empty: "Пока не удалось собрать события. Попробуй обновить локацию чуть позже.",
-    openAll: "Все события",
+    openAll: "Календарь",
     allEvents: "Календарь событий",
     openSource: "Открыть источник",
-    fallback: "Подборка",
+    fallback: "Рядом",
   },
   en: {
     section: "Events",
-    title: "Fishing events nearby",
+    title: "Events nearby",
     loading: "Loading nearby events...",
     resolving: "First we need your country and city from geolocation or IP.",
     empty: "Could not collect events yet. Try refreshing your location later.",
-    openAll: "All events",
+    openAll: "Calendar",
     allEvents: "Event calendar",
     openSource: "Open source",
-    fallback: "Selection",
+    fallback: "Nearby",
   },
   es: {
     section: "Eventos",
-    title: "Eventos de pesca cerca de ti",
+    title: "Eventos cerca",
     loading: "Cargando eventos cercanos...",
     resolving: "Primero necesitamos tu país y ciudad por geolocalización o IP.",
     empty: "Todavía no se pudieron obtener eventos. Intenta actualizar la ubicación más tarde.",
-    openAll: "Todos los eventos",
+    openAll: "Calendario",
     allEvents: "Calendario de eventos",
     openSource: "Abrir fuente",
-    fallback: "Selección",
+    fallback: "Cerca",
   },
   fr: {
     section: "Événements",
-    title: "Événements de pêche proches",
+    title: "Événements proches",
     loading: "Chargement des événements proches...",
     resolving: "Nous devons d'abord déterminer votre pays et votre ville via la géolocalisation ou l'IP.",
     empty: "Impossible de récupérer les événements pour le moment. Réessayez plus tard.",
-    openAll: "Tous les événements",
+    openAll: "Calendrier",
     allEvents: "Calendrier des événements",
     openSource: "Ouvrir la source",
-    fallback: "Sélection",
+    fallback: "À proximité",
   },
   pt: {
     section: "Eventos",
-    title: "Eventos de pesca por perto",
+    title: "Eventos por perto",
     loading: "Carregando eventos próximos...",
     resolving: "Primeiro precisamos do seu país e cidade pela geolocalização ou IP.",
     empty: "Ainda não foi possível obter os eventos. Tente atualizar a localização mais tarde.",
-    openAll: "Todos os eventos",
+    openAll: "Calendário",
     allEvents: "Calendário de eventos",
     openSource: "Abrir fonte",
-    fallback: "Seleção",
+    fallback: "Por perto",
   },
 };
 
@@ -198,35 +199,41 @@ export function HomeFishingEventsWidget() {
   return (
     <>
       <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <div className="text-sm text-text-muted">{t.section}</div>
-            <h2 className="font-display text-2xl font-semibold text-text-main">{t.title}</h2>
-          </div>
-          {events.length > 0 ? (
-            <button type="button" onClick={() => setOpen(true)} className="text-sm font-semibold text-primary">
-              {t.openAll}
-            </button>
-          ) : null}
-        </div>
+        <SectionHeader
+          eyebrow={t.section}
+          title={t.title}
+          titleClassName="text-[20px]"
+          action={
+            events.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10"
+              >
+                <span>{t.openAll}</span>
+                <ChevronRight size={15} className="text-primary" />
+              </button>
+            ) : null
+          }
+        />
 
         {!location?.country ? (
-          <div className="rounded-[22px] border border-dashed border-border-subtle px-4 py-5 text-sm text-text-muted">
+          <div className="mt-4 rounded-[22px] border border-dashed border-border-subtle px-4 py-5 text-sm text-text-muted">
             {t.resolving}
           </div>
         ) : loading ? (
-          <div className="flex items-center gap-3 rounded-[22px] border border-border-subtle bg-white/4 px-4 py-5 text-sm text-text-muted">
+          <div className="mt-4 flex items-center gap-3 rounded-[22px] border border-border-subtle bg-white/4 px-4 py-5 text-sm text-text-muted">
             <Loader2 size={16} className="animate-spin" />
             <span>{t.loading}</span>
           </div>
         ) : previewEvents.length > 0 ? (
-          <div className="space-y-3">
+          <div className="mt-4 space-y-3">
             {previewEvents.map((event) => (
               <EventRow key={event.id} event={event} lang={lang} openSource={t.openSource} />
             ))}
           </div>
         ) : (
-          <div className="rounded-[22px] border border-dashed border-border-subtle px-4 py-5 text-sm text-text-muted">
+          <div className="mt-4 rounded-[22px] border border-dashed border-border-subtle px-4 py-5 text-sm text-text-muted">
             {t.empty}
           </div>
         )}

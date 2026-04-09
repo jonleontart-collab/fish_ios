@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { LANGUAGE_COOKIE_NAME, normalizeLanguage } from "@/lib/i18n";
 import { getCurrentUser } from "@/lib/queries";
@@ -12,5 +12,12 @@ export async function getServerLanguage() {
   }
 
   const user = await getCurrentUser();
-  return normalizeLanguage(user?.preferredLanguage);
+
+  if (user?.preferredLanguage) {
+    return normalizeLanguage(user.preferredLanguage);
+  }
+
+  const headerStore = await headers();
+  const acceptLanguage = headerStore.get("accept-language");
+  return normalizeLanguage(acceptLanguage);
 }

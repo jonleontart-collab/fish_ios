@@ -21,6 +21,7 @@ type ProfileEditorProps = {
     experienceYears: number | null;
     preferredStyles: string | null;
     homeWater: string | null;
+    showInventory: boolean;
     avatarGradient: string;
     avatarPath: string | null;
     bannerPath: string | null;
@@ -39,6 +40,8 @@ const translations: TranslationMap<{
   experienceYears: string;
   homeWater: string;
   preferredStyles: string;
+  showInventory: string;
+  showInventoryHint: string;
   bio: string;
   saveError: string;
   saveSuccess: string;
@@ -58,6 +61,8 @@ const translations: TranslationMap<{
     experienceYears: "Стаж, лет",
     homeWater: "Основная акватория или регион",
     preferredStyles: "Стили ловли",
+    showInventory: "Показывать инвентарь в публичном профиле",
+    showInventoryHint: "Другие рыбаки смогут просматривать снасти и экипировку прямо на твоей странице.",
     bio: "Коротко о себе, стиле ловли и том, чем делишься в ленте",
     saveError: "Не удалось сохранить профиль.",
     saveSuccess: "Профиль обновлен",
@@ -77,6 +82,8 @@ const translations: TranslationMap<{
     experienceYears: "Experience, years",
     homeWater: "Home water or region",
     preferredStyles: "Fishing styles",
+    showInventory: "Show inventory on public profile",
+    showInventoryHint: "Other anglers will be able to browse your tackle and gear from your page.",
     bio: "A short note about yourself, your style, and what you share in the feed",
     saveError: "Could not save the profile.",
     saveSuccess: "Profile updated",
@@ -96,6 +103,8 @@ const translations: TranslationMap<{
     experienceYears: "Experiencia, años",
     homeWater: "Zona principal o región",
     preferredStyles: "Estilos de pesca",
+    showInventory: "Mostrar inventario en el perfil público",
+    showInventoryHint: "Otros pescadores podrán ver tus equipos y aparejos desde tu perfil.",
     bio: "Cuéntanos brevemente sobre ti, tu estilo y lo que compartes en el feed",
     saveError: "No se pudo guardar el perfil.",
     saveSuccess: "Perfil actualizado",
@@ -115,6 +124,8 @@ const translations: TranslationMap<{
     experienceYears: "Expérience, années",
     homeWater: "Plan d'eau principal ou région",
     preferredStyles: "Styles de pêche",
+    showInventory: "Afficher l'inventaire sur le profil public",
+    showInventoryHint: "Les autres pêcheurs pourront voir votre matériel depuis votre page.",
     bio: "Quelques mots sur vous, votre style et ce que vous partagez dans le feed",
     saveError: "Impossible d'enregistrer le profil.",
     saveSuccess: "Profil mis à jour",
@@ -134,6 +145,8 @@ const translations: TranslationMap<{
     experienceYears: "Experiência, anos",
     homeWater: "Água principal ou região",
     preferredStyles: "Estilos de pesca",
+    showInventory: "Mostrar inventário no perfil público",
+    showInventoryHint: "Outros pescadores poderão ver seu equipamento diretamente no seu perfil.",
     bio: "Fale brevemente sobre você, seu estilo e o que compartilha no feed",
     saveError: "Não foi possível salvar o perfil.",
     saveSuccess: "Perfil atualizado",
@@ -157,6 +170,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
     experienceYears: user.experienceYears ? String(user.experienceYears) : "",
     preferredStyles: user.preferredStyles ?? "",
     homeWater: user.homeWater ?? "",
+    showInventory: user.showInventory,
     avatar: null as File | null,
     banner: null as File | null,
   });
@@ -204,6 +218,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
       payload.append("experienceYears", form.experienceYears.trim());
       payload.append("preferredStyles", form.preferredStyles.trim());
       payload.append("homeWater", form.homeWater.trim());
+      payload.append("showInventory", String(form.showInventory));
 
       if (form.avatar) {
         payload.append("avatar", form.avatar);
@@ -392,6 +407,20 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
                 placeholder={t.preferredStyles}
                 className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3 text-text-main placeholder:text-text-soft focus:border-primary/30 focus:outline-none"
               />
+              <label className="flex items-start gap-3 rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={form.showInventory}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, showInventory: event.target.checked }))
+                  }
+                  className="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-primary"
+                />
+                <span className="text-sm leading-6 text-text-main">
+                  <span className="font-semibold">{t.showInventory}</span>
+                  <span className="mt-1 block text-text-muted">{t.showInventoryHint}</span>
+                </span>
+              </label>
               <textarea
                 value={form.bio}
                 onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}

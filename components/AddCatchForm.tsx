@@ -1,11 +1,21 @@
 'use client';
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Bot, CheckCircle2, Loader2, TriangleAlert, UploadCloud } from "lucide-react";
+import {
+  Bot,
+  CheckCircle2,
+  ImagePlus,
+  Loader2,
+  PlayCircle,
+  TriangleAlert,
+  UploadCloud,
+  X,
+} from "lucide-react";
 
 import { useLanguage } from "@/components/LanguageProvider";
 import { apiPath } from "@/lib/app-paths";
+import { MAX_CATCH_MEDIA_ITEMS } from "@/lib/constants";
 import type { TranslationMap } from "@/lib/i18n";
 
 type PlaceOption = {
@@ -31,6 +41,8 @@ const translations: TranslationMap<{
   title: string;
   pickPhoto: string;
   pickPhotoDescription: string;
+  addMore: string;
+  mediaLimit: string;
   analyze: string;
   analyzing: string;
   assistant: string;
@@ -46,15 +58,18 @@ const translations: TranslationMap<{
   photoRequired: string;
   speciesRequired: string;
   placeRequired: string;
-  photoMissing: string;
+  mediaMissing: string;
   aiError: string;
   publishError: string;
+  recognitionNoImage: string;
 }> = {
   ru: {
     section: "Добавить улов",
-    title: "Сохрани фото, замер и контекст сессии",
-    pickPhoto: "Добавь фото улова",
-    pickPhotoDescription: "Камера или галерея. Файл нужен для ИИ и публикации в ленте.",
+    title: "Фото, видео, размеры и короткая история сессии",
+    pickPhoto: "Добавь фото или видео улова",
+    pickPhotoDescription: "Можно загрузить до 10 файлов. Первая картинка пойдет на обложку поста.",
+    addMore: "Добавить еще",
+    mediaLimit: "До 10 файлов в одном посте",
     analyze: "Определить вид и размер",
     analyzing: "ИИ анализирует фото",
     assistant: "ИИ-помощник",
@@ -70,15 +85,18 @@ const translations: TranslationMap<{
     photoRequired: "Сначала выбери фото улова.",
     speciesRequired: "Укажи вид рыбы.",
     placeRequired: "Выбери место.",
-    photoMissing: "Нужно загрузить фотографию.",
+    mediaMissing: "Нужно загрузить хотя бы одно фото или видео.",
     aiError: "Не удалось получить ответ ИИ. Заполни поля вручную и продолжай.",
     publishError: "Публикация не удалась. Проверь поля и повтори.",
+    recognitionNoImage: "Для анализа нужно хотя бы одно фото. Видео можно оставить для самого поста.",
   },
   en: {
     section: "Add catch",
-    title: "Save the photo, measurements, and trip context",
-    pickPhoto: "Add a catch photo",
-    pickPhotoDescription: "Use the camera or gallery. The file is needed for AI and publishing.",
+    title: "Photos, video, measurements, and a quick trip story",
+    pickPhoto: "Add catch photos or video",
+    pickPhotoDescription: "You can upload up to 10 files. The first image becomes the cover of the post.",
+    addMore: "Add more",
+    mediaLimit: "Up to 10 files in one post",
     analyze: "Detect species and size",
     analyzing: "AI is analyzing the photo",
     assistant: "AI assistant",
@@ -94,15 +112,18 @@ const translations: TranslationMap<{
     photoRequired: "Choose a catch photo first.",
     speciesRequired: "Specify the fish species.",
     placeRequired: "Choose a place.",
-    photoMissing: "You need to upload a photo.",
+    mediaMissing: "You need to upload at least one photo or video.",
     aiError: "Could not get an AI response. Fill in the fields manually and continue.",
     publishError: "Could not publish the post. Check the fields and try again.",
+    recognitionNoImage: "AI recognition needs at least one photo. You can still keep video in the post.",
   },
   es: {
     section: "Añadir captura",
-    title: "Guarda la foto, medidas y contexto de la salida",
-    pickPhoto: "Añade una foto de la captura",
-    pickPhotoDescription: "Cámara o galería. El archivo es necesario para la IA y la publicación.",
+    title: "Fotos, video, medidas y una historia rápida de la salida",
+    pickPhoto: "Añade fotos o video de la captura",
+    pickPhotoDescription: "Puedes subir hasta 10 archivos. La primera imagen será la portada del post.",
+    addMore: "Añadir más",
+    mediaLimit: "Hasta 10 archivos en una publicación",
     analyze: "Detectar especie y tamaño",
     analyzing: "La IA está analizando la foto",
     assistant: "Asistente IA",
@@ -118,15 +139,18 @@ const translations: TranslationMap<{
     photoRequired: "Primero elige una foto de la captura.",
     speciesRequired: "Indica la especie del pez.",
     placeRequired: "Elige un lugar.",
-    photoMissing: "Debes subir una foto.",
+    mediaMissing: "Debes subir al menos una foto o un video.",
     aiError: "No se pudo obtener respuesta de la IA. Completa los campos manualmente y continúa.",
     publishError: "La publicación falló. Revisa los campos y vuelve a intentarlo.",
+    recognitionNoImage: "El análisis necesita al menos una foto. El video puede quedarse en la publicación.",
   },
   fr: {
     section: "Ajouter une prise",
-    title: "Enregistrez la photo, les mesures et le contexte",
-    pickPhoto: "Ajouter une photo de la prise",
-    pickPhotoDescription: "Appareil photo ou galerie. Le fichier est nécessaire pour l'IA et la publication.",
+    title: "Photos, vidéo, mesures et résumé rapide de la session",
+    pickPhoto: "Ajouter des photos ou une vidéo",
+    pickPhotoDescription: "Vous pouvez téléverser jusqu’à 10 fichiers. La première image devient la couverture du post.",
+    addMore: "Ajouter plus",
+    mediaLimit: "Jusqu’à 10 fichiers dans un post",
     analyze: "Détecter l'espèce et la taille",
     analyzing: "L'IA analyse la photo",
     assistant: "Assistant IA",
@@ -142,15 +166,18 @@ const translations: TranslationMap<{
     photoRequired: "Choisissez d'abord une photo de la prise.",
     speciesRequired: "Indiquez l'espèce du poisson.",
     placeRequired: "Choisissez un lieu.",
-    photoMissing: "Une photo est requise.",
+    mediaMissing: "Vous devez envoyer au moins une photo ou une vidéo.",
     aiError: "Impossible d'obtenir une réponse de l'IA. Remplissez les champs manuellement et continuez.",
     publishError: "La publication a échoué. Vérifiez les champs et réessayez.",
+    recognitionNoImage: "L’analyse a besoin d’au moins une photo. La vidéo peut rester dans le post.",
   },
   pt: {
     section: "Adicionar captura",
-    title: "Salve a foto, as medidas e o contexto da saída",
-    pickPhoto: "Adicione uma foto da captura",
-    pickPhotoDescription: "Câmera ou galeria. O arquivo é necessário para IA e publicação.",
+    title: "Fotos, vídeo, medidas e um resumo rápido da pescaria",
+    pickPhoto: "Adicione fotos ou vídeo da captura",
+    pickPhotoDescription: "Você pode enviar até 10 arquivos. A primeira imagem vira a capa do post.",
+    addMore: "Adicionar mais",
+    mediaLimit: "Até 10 arquivos em um post",
     analyze: "Detectar espécie e tamanho",
     analyzing: "A IA está analisando a foto",
     assistant: "Assistente IA",
@@ -166,9 +193,10 @@ const translations: TranslationMap<{
     photoRequired: "Escolha primeiro uma foto da captura.",
     speciesRequired: "Informe a espécie do peixe.",
     placeRequired: "Escolha um local.",
-    photoMissing: "É necessário enviar uma foto.",
+    mediaMissing: "É necessário enviar pelo menos uma foto ou um vídeo.",
     aiError: "Não foi possível obter resposta da IA. Preencha os campos manualmente e continue.",
     publishError: "A publicação falhou. Verifique os campos e tente novamente.",
+    recognitionNoImage: "A análise precisa de pelo menos uma foto. O vídeo pode continuar no post.",
   },
 };
 
@@ -176,8 +204,8 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
   const router = useRouter();
   const { lang } = useLanguage();
   const t = translations[lang];
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [recognition, setRecognition] = useState<RecognitionPayload | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -193,15 +221,18 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
   });
 
   useEffect(() => {
-    if (!file) {
-      setPreviewUrl(null);
-      return;
-    }
+    const urls = mediaFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
 
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [mediaFiles]);
+
+  const recognitionImage = useMemo(
+    () => mediaFiles.find((file) => file.type.startsWith("image/")) ?? null,
+    [mediaFiles],
+  );
 
   function updateField(name: keyof typeof form, value: string) {
     setForm((current) => ({
@@ -210,9 +241,28 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
     }));
   }
 
+  function handleFilesSelection(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    const nextFiles = Array.from(files)
+      .filter((file) => file.type.startsWith("image/") || file.type.startsWith("video/"))
+      .slice(0, MAX_CATCH_MEDIA_ITEMS);
+
+    setMediaFiles((current) => [...current, ...nextFiles].slice(0, MAX_CATCH_MEDIA_ITEMS));
+    setRecognition(null);
+    setError("");
+  }
+
+  function removeMedia(index: number) {
+    setMediaFiles((current) => current.filter((_, currentIndex) => currentIndex !== index));
+    setRecognition(null);
+  }
+
   async function handleRecognize() {
-    if (!file) {
-      setError(t.photoRequired);
+    if (!recognitionImage) {
+      setError(mediaFiles.length > 0 ? t.recognitionNoImage : t.photoRequired);
       return;
     }
 
@@ -221,7 +271,7 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
 
     try {
       const data = new FormData();
-      data.append("image", file);
+      data.append("image", recognitionImage);
 
       const response = await fetch(apiPath("/api/recognize"), {
         method: "POST",
@@ -250,8 +300,8 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
   }
 
   async function handlePublish() {
-    if (!file) {
-      setError(t.photoMissing);
+    if (mediaFiles.length === 0) {
+      setError(t.mediaMissing);
       return;
     }
 
@@ -270,7 +320,10 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
 
     try {
       const payload = new FormData();
-      payload.append("image", file);
+      for (const file of mediaFiles) {
+        payload.append("media", file);
+      }
+
       payload.append("species", form.species.trim());
       payload.append("placeId", form.placeId);
       payload.append("lengthCm", form.lengthCm);
@@ -309,40 +362,86 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
       </header>
 
       <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-        <label className="group relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-[26px] border border-dashed border-white/14 bg-surface-soft">
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(event) => {
-              const nextFile = event.target.files?.[0] ?? null;
-              setFile(nextFile);
-              setRecognition(null);
-              setError("");
-            }}
-          />
+        <div className="space-y-3">
+          {mediaFiles.length > 0 ? (
+            <>
+              <div className="relative overflow-hidden rounded-[26px] border border-white/8 bg-black/30">
+                {mediaFiles[0]?.type.startsWith("video/") ? (
+                  <video src={previewUrls[0]} controls className="aspect-square w-full bg-black object-cover" />
+                ) : (
+                  <img src={previewUrls[0]} alt={t.pickPhoto} className="aspect-square w-full object-cover" />
+                )}
+              </div>
 
-          {previewUrl ? (
-            <img src={previewUrl} alt={t.pickPhoto} className="h-full w-full object-cover" />
+              <div className="grid grid-cols-4 gap-3">
+                {mediaFiles.map((file, index) => (
+                  <div key={`${file.name}-${index}`} className="relative overflow-hidden rounded-[18px] border border-white/8 bg-black/30">
+                    {file.type.startsWith("video/") ? (
+                      <div className="relative aspect-square">
+                        <video src={previewUrls[index]} className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <PlayCircle size={26} className="text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <img src={previewUrls[index]} alt="" className="aspect-square h-full w-full object-cover" />
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => removeMedia(index)}
+                      className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
           ) : (
-            <div className="flex flex-col items-center gap-4 px-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/12 text-primary">
-                <UploadCloud size={30} />
+            <label className="group relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-[26px] border border-dashed border-white/14 bg-surface-soft">
+              <input
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={(event) => handleFilesSelection(event.target.files)}
+              />
+
+              <div className="flex flex-col items-center gap-4 px-8 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/12 text-primary">
+                  <UploadCloud size={30} />
+                </div>
+                <div className="space-y-1">
+                  <div className="font-semibold text-text-main">{t.pickPhoto}</div>
+                  <p className="text-sm text-text-muted">{t.pickPhotoDescription}</p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <div className="font-semibold text-text-main">{t.pickPhoto}</div>
-                <p className="text-sm text-text-muted">{t.pickPhotoDescription}</p>
-              </div>
-            </div>
+
+              <div className="pointer-events-none absolute inset-0 ring-1 ring-transparent transition group-hover:ring-primary/25" />
+            </label>
           )}
 
-          <div className="pointer-events-none absolute inset-0 ring-1 ring-transparent transition group-hover:ring-primary/25" />
-        </label>
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-xs font-medium text-text-muted">{t.mediaLimit}</div>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-text-main transition hover:bg-white/10">
+              <ImagePlus size={14} />
+              <span>{t.addMore}</span>
+              <input
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={(event) => handleFilesSelection(event.target.files)}
+              />
+            </label>
+          </div>
+        </div>
 
-        {file ? (
+        {mediaFiles.length > 0 ? (
           <button
             onClick={handleRecognize}
-            disabled={loadingAi}
+            disabled={loadingAi || !recognitionImage}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-[20px] border border-primary/20 bg-primary/12 px-4 py-4 font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAi ? <Loader2 size={18} className="animate-spin" /> : <Bot size={18} />}

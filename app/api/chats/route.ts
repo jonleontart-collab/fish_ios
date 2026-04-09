@@ -1,7 +1,9 @@
 import { z } from "zod";
+
 import { getCurrentUser } from "@/lib/queries";
 import { prisma } from "@/lib/prisma";
 import { createChatSlug } from "@/lib/slug";
+import { ensureSupportChatForUser } from "@/lib/support";
 
 const chatSchema = z.object({
   title: z.string().trim().min(3).max(80),
@@ -12,6 +14,61 @@ const chatSchema = z.object({
 });
 
 const accentPalette = ["#69f0ae", "#87b8ff", "#ffb86b", "#f7d070", "#8fe4ff"];
+
+export async function GET() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return Response.json({ error: "User not found." }, { status: 401 });
+  }
+
+  await ensureSupportChatForUser(user.id);
+
+  const chats = await prisma.chat.findMany({
+    where: {
+      members: {
+        some: {
+          userId: user.id,
+        },
+      },
+    },
+    include: {
+      members: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              handle: true,
+              avatarPath: true,
+              avatarGradient: true,
+              isSupport: true,
+            },
+          },
+        },
+      },
+      messages: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              handle: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: [{ isSystem: "desc" }, { updatedAt: "desc" }],
+    take: 20,
+  });
+
+  return Response.json({ chats });
+}
 
 export async function POST(request: Request) {
   const parsed = chatSchema.safeParse(await request.json());

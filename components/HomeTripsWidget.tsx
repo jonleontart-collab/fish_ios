@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, ChevronRight, MapPin } from "lucide-react";
 
+import { SectionHeader } from "@/components/SectionHeader";
 import { formatDateTime, tripStatusLabel } from "@/lib/format";
 import { type LanguageCode, type TranslationMap } from "@/lib/i18n";
 
@@ -23,33 +24,33 @@ const translations: TranslationMap<{
 }> = {
   ru: {
     section: "Выезды",
-    title: "Ближайшие поездки",
+    title: "Ближайшие выезды",
     empty: "Пока нет запланированных выездов. Открой планировщик и добавь первый.",
-    openAll: "Открыть планировщик",
+    openAll: "Планировщик",
   },
   en: {
     section: "Trips",
     title: "Upcoming trips",
     empty: "No trips planned yet. Open the planner and add your first one.",
-    openAll: "Open planner",
+    openAll: "Planner",
   },
   es: {
     section: "Salidas",
     title: "Próximas salidas",
     empty: "Todavía no hay salidas planeadas. Abre el planificador y añade la primera.",
-    openAll: "Abrir planificador",
+    openAll: "Planificador",
   },
   fr: {
     section: "Sorties",
     title: "Sorties à venir",
     empty: "Aucune sortie prévue pour le moment. Ouvre le planificateur et ajoute la première.",
-    openAll: "Ouvrir le planificateur",
+    openAll: "Planificateur",
   },
   pt: {
     section: "Viagens",
     title: "Próximas viagens",
     empty: "Ainda não há viagens planejadas. Abra o planejador e adicione a primeira.",
-    openAll: "Abrir planejador",
+    openAll: "Planejador",
   },
 };
 
@@ -64,18 +65,23 @@ export function HomeTripsWidget({
 
   return (
     <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <div className="text-sm text-text-muted">{t.section}</div>
-          <h2 className="font-display text-2xl font-semibold text-text-main">{t.title}</h2>
-        </div>
-        <Link href="/trips" className="text-sm font-semibold text-primary">
-          {t.openAll}
-        </Link>
-      </div>
+      <SectionHeader
+        eyebrow={t.section}
+        title={t.title}
+        titleClassName="text-[20px]"
+        action={
+          <Link
+            href="/trips"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10"
+          >
+            <span>{t.openAll}</span>
+            <ChevronRight size={15} className="text-primary" />
+          </Link>
+        }
+      />
 
       {trips.length > 0 ? (
-        <div className="space-y-3">
+        <div className="mt-4 space-y-3">
           {trips.slice(0, 3).map((trip) => (
             <Link
               key={trip.id}
@@ -104,7 +110,7 @@ export function HomeTripsWidget({
           ))}
         </div>
       ) : (
-        <div className="rounded-[22px] border border-dashed border-border-subtle px-4 py-5 text-sm text-text-muted">
+        <div className="mt-4 rounded-[22px] border border-dashed border-border-subtle px-4 py-5 text-sm text-text-muted">
           {t.empty}
         </div>
       )}

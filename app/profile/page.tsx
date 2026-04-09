@@ -6,6 +6,8 @@ import { FriendsDrawer } from "@/components/FriendsDrawer";
 import { InventoryManager } from "@/components/InventoryManager";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ProfileEditor } from "@/components/ProfileEditor";
+import { ProfileInventoryShowcase } from "@/components/ProfileInventoryShowcase";
+import { SectionHeader } from "@/components/SectionHeader";
 import { TripReportCard } from "@/components/TripReportCard";
 import { withBasePath } from "@/lib/app-paths";
 import { shoppingStatusLabel } from "@/lib/format";
@@ -22,7 +24,7 @@ const translations: TranslationMap<{
   trips: string;
   friends: string;
   profileActions: string;
-  anglerPassport: string;
+  about: string;
   experience: string;
   homeWater: string;
   style: string;
@@ -30,14 +32,15 @@ const translations: TranslationMap<{
   shoppingList: string;
   tripLabel: string;
   emptyShopping: string;
-  myCatches: string;
   latestPosts: string;
   add: string;
   noPosts: string;
-  myTrips: string;
   planAndReports: string;
   allTrips: string;
   noTrips: string;
+  gear: string;
+  gearLabel: string;
+  gearEmpty: string;
   years: (value: number) => string;
   noPhoto: string;
   logout: string;
@@ -49,7 +52,7 @@ const translations: TranslationMap<{
     trips: "Поездки",
     friends: "Друзья",
     profileActions: "Профиль",
-    anglerPassport: "О профиле",
+    about: "О профиле",
     experience: "Опыт",
     homeWater: "Основная акватория",
     style: "Стиль ловли",
@@ -57,14 +60,15 @@ const translations: TranslationMap<{
     shoppingList: "Покупки к поездкам",
     tripLabel: "Поездка",
     emptyShopping: "Список покупок пуст. В планировщике можно собрать покупки под конкретные поездки.",
-    myCatches: "Лента профиля",
     latestPosts: "Публикации",
     add: "Добавить",
     noPosts: "Публикаций пока нет. Добавь улов или отчет о поездке, и профиль оживет.",
-    myTrips: "Мои поездки",
     planAndReports: "Поездки и отчеты",
     allTrips: "Все поездки",
     noTrips: "Пока нет поездок. Запланируй выезд, добавь цели и потом опубликуй отчет в ленту.",
+    gear: "Инвентарь",
+    gearLabel: "Снасти и экипировка",
+    gearEmpty: "Пока нет добавленных снастей. Заполни инвентарь, чтобы профиль выглядел живым и полезным.",
     years: (value) => `${value} лет`,
     noPhoto: "Нет фото",
     logout: "Выйти",
@@ -76,7 +80,7 @@ const translations: TranslationMap<{
     trips: "Trips",
     friends: "Friends",
     profileActions: "Profile",
-    anglerPassport: "About",
+    about: "About",
     experience: "Experience",
     homeWater: "Home water",
     style: "Fishing style",
@@ -84,14 +88,15 @@ const translations: TranslationMap<{
     shoppingList: "Trip shopping list",
     tripLabel: "Trip",
     emptyShopping: "Your shopping list is empty. Use the planner to collect purchases for specific trips.",
-    myCatches: "Profile feed",
     latestPosts: "Posts",
     add: "Add",
     noPosts: "No posts yet. Add a catch or a trip report to bring this profile to life.",
-    myTrips: "My trips",
     planAndReports: "Trips and reports",
     allTrips: "All trips",
     noTrips: "No trips yet. Plan one, add goals, and publish the report later.",
+    gear: "Inventory",
+    gearLabel: "Tackle and gear",
+    gearEmpty: "No tackle added yet. Fill your inventory to make the profile more useful.",
     years: (value) => `${value} years`,
     noPhoto: "No photo",
     logout: "Log out",
@@ -103,7 +108,7 @@ const translations: TranslationMap<{
     trips: "Salidas",
     friends: "Amigos",
     profileActions: "Perfil",
-    anglerPassport: "Acerca del perfil",
+    about: "Acerca del perfil",
     experience: "Experiencia",
     homeWater: "Agua principal",
     style: "Estilo de pesca",
@@ -111,14 +116,15 @@ const translations: TranslationMap<{
     shoppingList: "Compras para salidas",
     tripLabel: "Salida",
     emptyShopping: "La lista de compras está vacía. Usa el planificador para preparar compras por salida.",
-    myCatches: "Feed del perfil",
     latestPosts: "Publicaciones",
     add: "Añadir",
     noPosts: "Todavía no hay publicaciones. Añade una captura o un reporte para dar vida al perfil.",
-    myTrips: "Mis salidas",
     planAndReports: "Salidas y reportes",
     allTrips: "Todas las salidas",
     noTrips: "Aún no hay salidas. Planifica una, añade objetivos y publica el reporte después.",
+    gear: "Inventario",
+    gearLabel: "Equipo y aparejos",
+    gearEmpty: "Todavía no hay equipo añadido. Completa el inventario para dar más vida al perfil.",
     years: (value) => `${value} años`,
     noPhoto: "Sin foto",
     logout: "Salir",
@@ -130,7 +136,7 @@ const translations: TranslationMap<{
     trips: "Sorties",
     friends: "Amis",
     profileActions: "Profil",
-    anglerPassport: "À propos",
+    about: "À propos",
     experience: "Expérience",
     homeWater: "Plan d'eau principal",
     style: "Style de pêche",
@@ -138,14 +144,15 @@ const translations: TranslationMap<{
     shoppingList: "Achats pour les sorties",
     tripLabel: "Sortie",
     emptyShopping: "La liste d'achats est vide. Utilisez le planificateur pour préparer les sorties.",
-    myCatches: "Feed du profil",
     latestPosts: "Publications",
     add: "Ajouter",
     noPosts: "Aucune publication pour le moment. Ajoutez une prise ou un rapport pour animer le profil.",
-    myTrips: "Mes sorties",
     planAndReports: "Sorties et rapports",
     allTrips: "Toutes les sorties",
     noTrips: "Aucune sortie pour le moment. Planifiez-en une, ajoutez des objectifs et publiez le rapport ensuite.",
+    gear: "Inventaire",
+    gearLabel: "Matériel et équipement",
+    gearEmpty: "Aucun matériel ajouté pour le moment. Remplissez votre inventaire pour enrichir le profil.",
     years: (value) => `${value} ans`,
     noPhoto: "Sans photo",
     logout: "Déconnexion",
@@ -157,7 +164,7 @@ const translations: TranslationMap<{
     trips: "Viagens",
     friends: "Amigos",
     profileActions: "Perfil",
-    anglerPassport: "Sobre",
+    about: "Sobre",
     experience: "Experiência",
     homeWater: "Água principal",
     style: "Estilo de pesca",
@@ -165,14 +172,15 @@ const translations: TranslationMap<{
     shoppingList: "Compras para viagens",
     tripLabel: "Viagem",
     emptyShopping: "A lista de compras está vazia. Use o planejador para montar compras por viagem.",
-    myCatches: "Feed do perfil",
     latestPosts: "Publicações",
     add: "Adicionar",
     noPosts: "Ainda não há publicações. Adicione uma captura ou um relatório para dar vida ao perfil.",
-    myTrips: "Minhas viagens",
     planAndReports: "Viagens e relatórios",
     allTrips: "Todas as viagens",
     noTrips: "Ainda não há viagens. Planeje uma, defina objetivos e publique o relatório depois.",
+    gear: "Inventário",
+    gearLabel: "Equipamentos e apetrechos",
+    gearEmpty: "Ainda não há equipamento cadastrado. Preencha o inventário para enriquecer o perfil.",
     years: (value) => `${value} anos`,
     noPhoto: "Sem foto",
     logout: "Sair",
@@ -276,7 +284,7 @@ export default async function ProfilePage() {
       </div>
 
       <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-        <div className="text-sm text-text-muted">{t.anglerPassport}</div>
+        <SectionHeader eyebrow={t.about} title={t.profileActions} titleClassName="text-[20px]" />
         <div className="mt-4 grid gap-3">
           <div className="rounded-[22px] border border-border-subtle bg-white/4 p-4">
             <div className="text-sm text-text-muted">{t.experience}</div>
@@ -295,14 +303,23 @@ export default async function ProfilePage() {
         </div>
       </section>
 
+      <ProfileInventoryShowcase
+        title={t.gearLabel}
+        subtitle={t.gear}
+        emptyLabel={t.gearEmpty}
+        items={profile.inventoryItems.slice(0, 4)}
+        action={
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/6 px-3 py-2 text-sm font-semibold text-text-muted">
+            {profile.inventoryItems.length}
+          </span>
+        }
+      />
+
       <InventoryManager items={profile.inventoryItems} />
 
       <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-text-main">
-          <ShoppingBag size={16} className="text-primary" />
-          {t.shoppingList}
-        </div>
-        <div className="space-y-3">
+        <SectionHeader eyebrow={t.shoppingList} title={t.shoppingList} titleClassName="text-[20px]" />
+        <div className="mt-4 space-y-3">
           {profile.shoppingItems.length > 0 ? (
             profile.shoppingItems.map((item) => (
               <div key={item.id} className="rounded-[22px] border border-border-subtle bg-white/4 p-4">
@@ -323,15 +340,16 @@ export default async function ProfilePage() {
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm text-text-muted">{t.myCatches}</div>
-            <h2 className="font-display text-2xl font-semibold text-text-main">{t.latestPosts}</h2>
-          </div>
-          <Link href="/add" className="text-sm font-semibold text-primary">
-            {t.add}
-          </Link>
-        </div>
+        <SectionHeader
+          eyebrow={t.catches}
+          title={t.latestPosts}
+          titleClassName="text-[20px]"
+          action={
+            <Link href="/add" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10">
+              {t.add}
+            </Link>
+          }
+        />
         <div className="space-y-4">
           {profile.catches.length > 0 ? (
             profile.catches.map((catchItem) => <CatchCard key={catchItem.id} catchItem={catchItem} showUser={false} />)
@@ -344,15 +362,16 @@ export default async function ProfilePage() {
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm text-text-muted">{t.myTrips}</div>
-            <h2 className="font-display text-2xl font-semibold text-text-main">{t.planAndReports}</h2>
-          </div>
-          <Link href="/trips" className="text-sm font-semibold text-primary">
-            {t.allTrips}
-          </Link>
-        </div>
+        <SectionHeader
+          eyebrow={t.trips}
+          title={t.planAndReports}
+          titleClassName="text-[20px]"
+          action={
+            <Link href="/trips" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10">
+              {t.allTrips}
+            </Link>
+          }
+        />
         <div className="space-y-4">
           {profile.trips.length > 0 ? (
             profile.trips.slice(0, 3).map((trip) => (

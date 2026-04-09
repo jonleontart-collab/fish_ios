@@ -6,6 +6,7 @@ import { getLanguageCookieOptions, getSessionCookieOptions } from "@/lib/auth-co
 import { LANGUAGE_COOKIE_NAME, normalizeLanguage, type LanguageCode } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
+import { ensureSupportUser } from "@/lib/support";
 
 type LoginPayload = {
   handle?: string;
@@ -52,6 +53,10 @@ export async function POST(req: Request) {
 
     if (!safeHandle || !safePassword) {
       return NextResponse.json({ error: errors[requestedLanguage].missing }, { status: 400 });
+    }
+
+    if (safeHandle === "fishflow_support") {
+      await ensureSupportUser();
     }
 
     const user = await prisma.user.findUnique({

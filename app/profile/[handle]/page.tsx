@@ -6,13 +6,15 @@ import { CatchCard } from "@/components/CatchCard";
 import { DirectChatButton } from "@/components/DirectChatButton";
 import { FriendToggleButton } from "@/components/FriendToggleButton";
 import { FriendsDrawer } from "@/components/FriendsDrawer";
+import { ProfileInventoryShowcase } from "@/components/ProfileInventoryShowcase";
+import { SectionHeader } from "@/components/SectionHeader";
 import { TripReportCard } from "@/components/TripReportCard";
 import { withBasePath } from "@/lib/app-paths";
-import { areFriends, getFriendsForUser } from "@/lib/social";
 import { type TranslationMap } from "@/lib/i18n";
 import { getServerLanguage } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/queries";
+import { areFriends, getFriendsForUser } from "@/lib/social";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,9 @@ const translations: TranslationMap<{
   favoriteWater: string;
   recentCatches: string;
   recentTrips: string;
+  gear: string;
+  gearLabel: string;
+  emptyGear: string;
   emptyCatches: string;
   emptyTrips: string;
   noPhoto: string;
@@ -43,6 +48,9 @@ const translations: TranslationMap<{
     favoriteWater: "Любимый водоем",
     recentCatches: "Публикации",
     recentTrips: "Поездки и отчеты",
+    gear: "Инвентарь",
+    gearLabel: "Снасти и экипировка",
+    emptyGear: "Этот пользователь пока не открыл свой инвентарь.",
     emptyCatches: "Пользователь пока не добавил публикации.",
     emptyTrips: "У пользователя пока нет опубликованных поездок.",
     noPhoto: "Нет фото",
@@ -59,6 +67,9 @@ const translations: TranslationMap<{
     favoriteWater: "Favorite water",
     recentCatches: "Posts",
     recentTrips: "Trips and reports",
+    gear: "Inventory",
+    gearLabel: "Tackle and gear",
+    emptyGear: "This user has not opened the inventory yet.",
     emptyCatches: "This user has not added posts yet.",
     emptyTrips: "This user does not have published trips yet.",
     noPhoto: "No photo",
@@ -75,6 +86,9 @@ const translations: TranslationMap<{
     favoriteWater: "Agua favorita",
     recentCatches: "Publicaciones",
     recentTrips: "Salidas y reportes",
+    gear: "Inventario",
+    gearLabel: "Equipo y aparejos",
+    emptyGear: "Este usuario aún no ha abierto su inventario.",
     emptyCatches: "Este usuario todavía no ha añadido publicaciones.",
     emptyTrips: "Este usuario aún no tiene salidas publicadas.",
     noPhoto: "Sin foto",
@@ -91,6 +105,9 @@ const translations: TranslationMap<{
     favoriteWater: "Plan d'eau favori",
     recentCatches: "Publications",
     recentTrips: "Sorties et rapports",
+    gear: "Inventaire",
+    gearLabel: "Matériel et équipement",
+    emptyGear: "Cet utilisateur n'a pas encore ouvert son inventaire.",
     emptyCatches: "Cet utilisateur n'a pas encore ajouté de publications.",
     emptyTrips: "Cet utilisateur n'a pas encore de sorties publiées.",
     noPhoto: "Sans photo",
@@ -107,6 +124,9 @@ const translations: TranslationMap<{
     favoriteWater: "Água favorita",
     recentCatches: "Publicações",
     recentTrips: "Viagens e relatórios",
+    gear: "Inventário",
+    gearLabel: "Equipamentos e apetrechos",
+    emptyGear: "Este usuário ainda não abriu o inventário.",
     emptyCatches: "Este usuário ainda não adicionou publicações.",
     emptyTrips: "Este usuário ainda não tem viagens publicadas.",
     noPhoto: "Sem foto",
@@ -131,6 +151,11 @@ export default async function PublicProfilePage({
         include: {
           user: true,
           place: true,
+          media: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+          },
           likes: viewer
             ? {
                 where: { userId: viewer.id },
@@ -175,6 +200,10 @@ export default async function PublicProfilePage({
         },
         take: 3,
       },
+      inventoryItems: {
+        orderBy: [{ category: "asc" }, { createdAt: "desc" }],
+        take: 8,
+      },
       _count: {
         select: {
           catches: true,
@@ -192,6 +221,7 @@ export default async function PublicProfilePage({
     getFriendsForUser(user.id),
     viewer ? areFriends(viewer.id, user.id) : false,
   ]);
+
   const catches = user.catches.map((catchItem) => ({
     ...catchItem,
     likesCount: catchItem._count.likes,
@@ -199,12 +229,26 @@ export default async function PublicProfilePage({
     repostsCount: catchItem._count.reposts,
     likedByViewer: Boolean(catchItem.likes?.length),
     repostedByViewer: Boolean(catchItem.reposts?.length),
+    mediaItems:
+      catchItem.media.length > 0
+        ? catchItem.media
+        : [
+            {
+              id: `${catchItem.id}-cover`,
+              mediaPath: catchItem.imagePath,
+              mediaType: "IMAGE" as const,
+              sortOrder: 0,
+            },
+          ],
   }));
 
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
       <header className="flex items-center justify-between">
-        <Link href="/feed" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-white/20">
+        <Link
+          href="/feed"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-white/20"
+        >
           <ArrowLeft size={20} />
         </Link>
         <div className="font-semibold text-text-main">{t.profile}</div>
@@ -223,7 +267,11 @@ export default async function PublicProfilePage({
 
         <div className="relative z-10 -mt-12 px-5 text-center">
           {user.avatarPath ? (
-            <img src={withBasePath(user.avatarPath)} alt={user.name} className="mx-auto h-24 w-24 rounded-full border-4 border-background bg-surface object-cover shadow-2xl" />
+            <img
+              src={withBasePath(user.avatarPath)}
+              alt={user.name}
+              className="mx-auto h-24 w-24 rounded-full border-4 border-background bg-surface object-cover shadow-2xl"
+            />
           ) : (
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-background border-dashed bg-black/20 text-center text-[11px] font-semibold text-text-muted shadow-2xl">
               {t.noPhoto}
@@ -286,11 +334,17 @@ export default async function PublicProfilePage({
         </div>
       </div>
 
+      {user.showInventory ? (
+        <ProfileInventoryShowcase
+          title={t.gearLabel}
+          subtitle={t.gear}
+          emptyLabel={t.emptyGear}
+          items={user.inventoryItems}
+        />
+      ) : null}
+
       <section className="space-y-4">
-        <div className="flex items-center gap-2 text-lg font-bold text-white">
-          <Trophy size={18} className="text-primary" />
-          {t.recentCatches}
-        </div>
+        <SectionHeader eyebrow={t.catches} title={t.recentCatches} titleClassName="text-[20px]" />
 
         {catches.length > 0 ? (
           <div className="space-y-4">
@@ -306,10 +360,19 @@ export default async function PublicProfilePage({
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center gap-2 text-lg font-bold text-white">
-          <CalendarDays size={18} className="text-accent" />
-          {t.recentTrips}
-        </div>
+        <SectionHeader
+          eyebrow={t.trips}
+          title={t.recentTrips}
+          titleClassName="text-[20px]"
+          action={
+            user.trips.length > 0 ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/6 px-3 py-2 text-sm font-semibold text-text-muted">
+                <CalendarDays size={14} />
+                {user.trips.length}
+              </span>
+            ) : null
+          }
+        />
 
         {user.trips.length > 0 ? (
           <div className="space-y-4">

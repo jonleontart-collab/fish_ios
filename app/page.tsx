@@ -6,6 +6,7 @@ import { CatchCard } from "@/components/CatchCard";
 import { HomeFishingEventsWidget } from "@/components/HomeFishingEventsWidget";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeTripsWidget } from "@/components/HomeTripsWidget";
+import { SectionHeader } from "@/components/SectionHeader";
 import { withBasePath } from "@/lib/app-paths";
 import { type TranslationMap } from "@/lib/i18n";
 import { getServerLanguage } from "@/lib/i18n-server";
@@ -14,38 +15,56 @@ import { getDashboardData } from "@/lib/queries";
 export const dynamic = "force-dynamic";
 
 const translations: TranslationMap<{
+  homeLabel: string;
+  homeTitle: string;
   addCatch: string;
+  activityLabel: string;
   activityFeed: string;
   emptyFeedTitle: string;
   emptyFeedDescription: string;
 }> = {
   ru: {
+    homeLabel: "Waterline",
+    homeTitle: "FishFlow",
     addCatch: "Добавить улов",
-    activityFeed: "Лента активности",
+    activityLabel: "Лента",
+    activityFeed: "Свежие публикации",
     emptyFeedTitle: "Лента пока пустая",
     emptyFeedDescription: "Подпишись на других рыбаков или добавь свой первый улов.",
   },
   en: {
+    homeLabel: "Waterline",
+    homeTitle: "FishFlow",
     addCatch: "Add catch",
-    activityFeed: "Activity feed",
+    activityLabel: "Feed",
+    activityFeed: "Fresh posts",
     emptyFeedTitle: "The feed is empty",
     emptyFeedDescription: "Follow other anglers or add your first catch.",
   },
   es: {
+    homeLabel: "Waterline",
+    homeTitle: "FishFlow",
     addCatch: "Añadir captura",
-    activityFeed: "Actividad",
+    activityLabel: "Feed",
+    activityFeed: "Publicaciones recientes",
     emptyFeedTitle: "El feed está vacío",
     emptyFeedDescription: "Sigue a otros pescadores o añade tu primera captura.",
   },
   fr: {
+    homeLabel: "Waterline",
+    homeTitle: "FishFlow",
     addCatch: "Ajouter une prise",
-    activityFeed: "Activité",
+    activityLabel: "Feed",
+    activityFeed: "Publications récentes",
     emptyFeedTitle: "Le feed est vide",
     emptyFeedDescription: "Suivez d'autres pêcheurs ou ajoutez votre première prise.",
   },
   pt: {
+    homeLabel: "Waterline",
+    homeTitle: "FishFlow",
     addCatch: "Adicionar captura",
-    activityFeed: "Feed de atividade",
+    activityLabel: "Feed",
+    activityFeed: "Publicações recentes",
     emptyFeedTitle: "O feed está vazio",
     emptyFeedDescription: "Siga outros pescadores ou adicione sua primeira captura.",
   },
@@ -58,9 +77,33 @@ export default async function Home() {
 
   return (
     <div className="pb-24 pt-safe sm:pt-6">
-      <header className="mb-2 flex items-center justify-between px-4 py-3 sm:px-0">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-text-main">FishFlow</h1>
-        <Link href="/profile" className="group shrink-0">
+      <header className="mb-4 flex items-center justify-between gap-4 px-4 py-3 sm:px-0">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/8 bg-white/5 shadow-[0_12px_30px_rgba(0,0,0,0.25)]">
+            <Image
+              src={withBasePath("/brand/app-mark-square.png")}
+              alt={t.homeTitle}
+              width={36}
+              height={36}
+              className="h-9 w-9"
+            />
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-text-muted">
+              {t.homeLabel}
+            </div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-text-main">{t.homeTitle}</h1>
+          </div>
+        </div>
+
+        <Link
+          href="/profile"
+          className="group flex items-center gap-3 rounded-[20px] border border-white/8 bg-white/4 px-3 py-2.5 transition hover:bg-white/8"
+        >
+          <div className="text-right">
+            <div className="text-sm font-semibold text-white">@{dashboard.user.handle}</div>
+            <div className="text-xs text-text-muted">{dashboard.user.name}</div>
+          </div>
           {dashboard.user.avatarPath ? (
             <Image
               src={withBasePath(dashboard.user.avatarPath)}
@@ -100,15 +143,13 @@ export default async function Home() {
         </Link>
       </div>
 
-      <div className="mb-4 mt-8 flex items-center justify-between px-4 sm:px-0">
-        <h2 className="font-display text-xl font-bold text-text-main">{t.activityFeed}</h2>
+      <div className="mb-4 mt-8 px-4 sm:px-0">
+        <SectionHeader eyebrow={t.activityLabel} title={t.activityFeed} />
       </div>
 
       <div className="sm:space-y-6">
         {dashboard.recentCatches.length > 0 ? (
-          dashboard.recentCatches.map((catchItem) => (
-            <CatchCard key={catchItem.id} catchItem={catchItem} />
-          ))
+          dashboard.recentCatches.map((catchItem) => <CatchCard key={catchItem.id} catchItem={catchItem} />)
         ) : (
           <div className="px-4 sm:px-0">
             <div className="bento-card border-dashed p-6 text-center">

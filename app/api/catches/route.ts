@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { MAX_UPLOAD_SIZE_BYTES } from "@/lib/constants";
+
+import { MAX_CATCH_MEDIA_ITEMS, MAX_UPLOAD_SIZE_BYTES } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/queries";
 import { prisma } from "@/lib/prisma";
-import { saveImageFile } from "@/lib/storage";
+import { saveMediaFile } from "@/lib/storage";
 
 const createCatchSchema = z.object({
   species: z.string().trim().min(2).max(80),
@@ -38,16 +39,42 @@ const createCatchSchema = z.object({
     .transform((value) => (value ? Number(value) : null)),
 });
 
-export async function POST(request: Request) {
-  const formData = await request.formData();
-  const image = formData.get("image");
-
-  if (!(image instanceof File)) {
-    return Response.json({ error: "Изображение не найдено." }, { status: 400 });
+function getCatchMediaType(file: File) {
+  if (file.type.startsWith("image/")) {
+    return "IMAGE" as const;
   }
 
-  if (image.size > MAX_UPLOAD_SIZE_BYTES) {
-    return Response.json({ error: "Файл слишком большой." }, { status: 400 });
+  if (file.type.startsWith("video/")) {
+    return "VIDEO" as const;
+  }
+
+  return null;
+}
+
+export async function POST(request: Request) {
+  const formData = await request.formData();
+  const legacyImage = formData.get("image");
+  const submittedMedia = [
+    ...formData.getAll("media"),
+    ...(legacyImage instanceof File && legacyImage.size > 0 ? [legacyImage] : []),
+  ].filter((value): value is File => value instanceof File && value.size > 0);
+
+  if (submittedMedia.length === 0) {
+    return Response.json({ error: "Нужно добавить хотя бы одно фото или видео." }, { status: 400 });
+  }
+
+  if (submittedMedia.length > MAX_CATCH_MEDIA_ITEMS) {
+    return Response.json({ error: `Можно добавить не больше ${MAX_CATCH_MEDIA_ITEMS} файлов.` }, { status: 400 });
+  }
+
+  for (const file of submittedMedia) {
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      return Response.json({ error: "Файл слишком большой." }, { status: 400 });
+    }
+
+    if (!getCatchMediaType(file)) {
+      return Response.json({ error: "Поддерживаются только фото и видео." }, { status: 400 });
+    }
   }
 
   const parsed = createCatchSchema.safeParse({
@@ -84,7 +111,15 @@ export async function POST(request: Request) {
     return Response.json({ error: "Место не найдено." }, { status: 404 });
   }
 
-  const stored = await saveImageFile(image);
+  const storedMedia = await Promise.all(
+    submittedMedia.map(async (file, index) => ({
+      ...(await saveMediaFile(file)),
+      mediaType: getCatchMediaType(file)!,
+      sortOrder: index,
+    })),
+  );
+
+  const coverMedia = storedMedia[0];
 
   const created = await prisma.catch.create({
     data: {
@@ -95,11 +130,18 @@ export async function POST(request: Request) {
       lengthCm: parsed.data.lengthCm,
       bait: parsed.data.bait || null,
       note: parsed.data.note || null,
-      imagePath: stored.publicPath,
+      imagePath: coverMedia.publicPath,
       recognizedSpecies: parsed.data.recognizedSpecies || null,
       recognizedLengthCm: parsed.data.recognizedLengthCm,
       aiConfidence: parsed.data.aiConfidence,
       isFeatured: (parsed.data.weightKg ?? 0) >= 4 || (parsed.data.lengthCm ?? 0) >= 75,
+      media: {
+        create: storedMedia.map((item) => ({
+          mediaPath: item.publicPath,
+          mediaType: item.mediaType,
+          sortOrder: item.sortOrder,
+        })),
+      },
     },
     select: { id: true },
   });

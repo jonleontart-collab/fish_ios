@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, KeyRound, UserRound } from "lucide-react";
+import { ArrowRight, Globe2, KeyRound, ShieldCheck, UserRound } from "lucide-react";
 
 import { useLanguage } from "@/components/LanguageProvider";
 import { apiPath, withBasePath } from "@/lib/app-paths";
-import type { TranslationMap } from "@/lib/i18n";
+import { languageOptions, type TranslationMap } from "@/lib/i18n";
 
 const translations: TranslationMap<{
   access: string;
@@ -26,19 +27,22 @@ const translations: TranslationMap<{
   lastNameLabel: string;
   lastNamePlaceholder: string;
   birthDateLabel: string;
+  languageLabel: string;
+  termsLabel: string;
+  termsLink: string;
   submitLogin: string;
   submitRegister: string;
   loading: string;
   genericError: string;
 }> = {
   ru: {
-    access: "Вход в закрытое рыболовное сообщество",
+    access: "Закрытое сообщество рыбаков, карты, чаты и умные выезды",
     loginTab: "Вход",
     registerTab: "Регистрация",
     loginTitle: "Вход в FishFlow",
-    registerTitle: "Регистрация в FishFlow",
+    registerTitle: "Создать аккаунт",
     loginDescription: "Введи никнейм и пароль, чтобы открыть приложение.",
-    registerDescription: "Создай аккаунт с именем, фамилией, датой рождения и паролем.",
+    registerDescription: "Создай профиль с настоящим именем, датой рождения и доступом к своим местам, чатам и выездам.",
     nicknameLabel: "Никнейм",
     nicknamePlaceholder: "nickname",
     passwordLabel: "Пароль",
@@ -48,19 +52,22 @@ const translations: TranslationMap<{
     lastNameLabel: "Фамилия",
     lastNamePlaceholder: "Введите фамилию",
     birthDateLabel: "Дата рождения",
+    languageLabel: "Язык",
+    termsLabel: "Я принимаю",
+    termsLink: "условия сервиса и политику данных",
     submitLogin: "Войти",
     submitRegister: "Создать аккаунт",
     loading: "Подождите...",
     genericError: "Не удалось выполнить авторизацию.",
   },
   en: {
-    access: "Access to the private fishing community",
+    access: "Private angler community with maps, chats, and smarter trips",
     loginTab: "Login",
     registerTab: "Register",
     loginTitle: "Login to FishFlow",
-    registerTitle: "Create your FishFlow account",
+    registerTitle: "Create your account",
     loginDescription: "Enter your nickname and password to open the app.",
-    registerDescription: "Create an account with your first name, last name, birth date, and password.",
+    registerDescription: "Create a real profile with your name, date of birth, and access to places, chats, and trips.",
     nicknameLabel: "Nickname",
     nicknamePlaceholder: "nickname",
     passwordLabel: "Password",
@@ -70,19 +77,22 @@ const translations: TranslationMap<{
     lastNameLabel: "Last name",
     lastNamePlaceholder: "Enter last name",
     birthDateLabel: "Date of birth",
+    languageLabel: "Language",
+    termsLabel: "I accept the",
+    termsLink: "Terms and Privacy Notice",
     submitLogin: "Log in",
     submitRegister: "Create account",
     loading: "Please wait...",
     genericError: "Authorization failed.",
   },
   es: {
-    access: "Acceso a la comunidad privada de pesca",
+    access: "Comunidad privada de pesca con mapas, chats y salidas más inteligentes",
     loginTab: "Entrar",
     registerTab: "Registro",
     loginTitle: "Entrar en FishFlow",
-    registerTitle: "Crear cuenta en FishFlow",
+    registerTitle: "Crear cuenta",
     loginDescription: "Introduce tu apodo y contraseña para abrir la aplicación.",
-    registerDescription: "Crea una cuenta con nombre, apellido, fecha de nacimiento y contraseña.",
+    registerDescription: "Crea un perfil real con tu nombre, fecha de nacimiento y acceso a lugares, chats y salidas.",
     nicknameLabel: "Apodo",
     nicknamePlaceholder: "nickname",
     passwordLabel: "Contraseña",
@@ -92,19 +102,22 @@ const translations: TranslationMap<{
     lastNameLabel: "Apellido",
     lastNamePlaceholder: "Introduce el apellido",
     birthDateLabel: "Fecha de nacimiento",
+    languageLabel: "Idioma",
+    termsLabel: "Acepto los",
+    termsLink: "Términos y el aviso de privacidad",
     submitLogin: "Entrar",
     submitRegister: "Crear cuenta",
     loading: "Espera...",
     genericError: "No se pudo autorizar.",
   },
   fr: {
-    access: "Accès à la communauté privée de pêche",
+    access: "Communauté privée de pêche avec cartes, chats et sorties plus intelligentes",
     loginTab: "Connexion",
     registerTab: "Inscription",
     loginTitle: "Connexion à FishFlow",
-    registerTitle: "Créer un compte FishFlow",
+    registerTitle: "Créer un compte",
     loginDescription: "Entrez votre pseudo et votre mot de passe pour ouvrir l'application.",
-    registerDescription: "Créez un compte avec prénom, nom, date de naissance et mot de passe.",
+    registerDescription: "Créez un vrai profil avec votre nom, votre date de naissance et l’accès aux spots, chats et sorties.",
     nicknameLabel: "Pseudo",
     nicknamePlaceholder: "nickname",
     passwordLabel: "Mot de passe",
@@ -114,19 +127,22 @@ const translations: TranslationMap<{
     lastNameLabel: "Nom",
     lastNamePlaceholder: "Entrez le nom",
     birthDateLabel: "Date de naissance",
+    languageLabel: "Langue",
+    termsLabel: "J’accepte les",
+    termsLink: "Conditions et la notice de confidentialité",
     submitLogin: "Se connecter",
     submitRegister: "Créer un compte",
     loading: "Veuillez patienter...",
     genericError: "Échec de l'autorisation.",
   },
   pt: {
-    access: "Acesso à comunidade privada de pesca",
+    access: "Comunidade privada de pesca com mapas, chats e saídas mais inteligentes",
     loginTab: "Entrar",
     registerTab: "Cadastro",
     loginTitle: "Entrar no FishFlow",
-    registerTitle: "Criar conta no FishFlow",
+    registerTitle: "Criar conta",
     loginDescription: "Digite seu apelido e senha para abrir o aplicativo.",
-    registerDescription: "Crie uma conta com nome, sobrenome, data de nascimento e senha.",
+    registerDescription: "Crie um perfil real com seu nome, data de nascimento e acesso a locais, chats e viagens.",
     nicknameLabel: "Apelido",
     nicknamePlaceholder: "nickname",
     passwordLabel: "Senha",
@@ -136,6 +152,9 @@ const translations: TranslationMap<{
     lastNameLabel: "Sobrenome",
     lastNamePlaceholder: "Digite o sobrenome",
     birthDateLabel: "Data de nascimento",
+    languageLabel: "Idioma",
+    termsLabel: "Aceito os",
+    termsLink: "Termos e o aviso de privacidade",
     submitLogin: "Entrar",
     submitRegister: "Criar conta",
     loading: "Aguarde...",
@@ -149,6 +168,7 @@ const initialRegisterState = {
   handle: "",
   birthDate: "",
   password: "",
+  acceptedTerms: false,
 };
 
 const initialLoginState = {
@@ -158,14 +178,19 @@ const initialLoginState = {
 
 export default function Onboarding() {
   const router = useRouter();
-  const { lang } = useLanguage();
+  const { lang, setLanguage } = useLanguage();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loginForm, setLoginForm] = useState(initialLoginState);
   const [registerForm, setRegisterForm] = useState(initialRegisterState);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
   const t = translations[lang];
+
+  const maxBirthDate = useMemo(() => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 13);
+    return date.toISOString().slice(0, 10);
+  }, []);
 
   async function submitAuth(event: React.FormEvent) {
     event.preventDefault();
@@ -211,25 +236,51 @@ export default function Onboarding() {
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(94,156,255,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(103,232,178,0.18),transparent_30%),linear-gradient(180deg,#02060b_0%,#04090f_45%,#010203_100%)]" />
         <div className="absolute inset-0 opacity-15">
-          <Image src={withBasePath("/graphics/hero-main-river.png")} alt="" fill className="object-cover mix-blend-screen" priority />
+          <Image
+            src={withBasePath("/graphics/hero-main-river.png")}
+            alt=""
+            fill
+            className="object-cover mix-blend-screen"
+            priority
+          />
         </div>
       </div>
 
       <div className="w-full max-w-md rounded-[36px] border border-white/8 bg-[rgba(4,10,16,0.82)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:p-7">
-        <div className="mb-7 flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-[24px] border border-white/10 bg-white/5">
-            <Image
-              src={withBasePath("/brand/app-mark-square.png")}
-              alt="FishFlow"
-              width={44}
-              height={44}
-              className="h-11 w-11"
-            />
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-[24px] border border-white/10 bg-white/5">
+              <Image
+                src={withBasePath("/brand/app-mark-square.png")}
+                alt="FishFlow"
+                width={44}
+                height={44}
+                className="h-11 w-11"
+              />
+            </div>
+            <div>
+              <div className="font-display text-[34px] font-bold tracking-tight text-white">FishFlow</div>
+              <p className="max-w-[15rem] text-sm text-[#93a9c3]">{t.access}</p>
+            </div>
           </div>
-          <div>
-            <div className="font-display text-[34px] font-bold tracking-tight text-white">FishFlow</div>
-            <p className="text-sm text-[#93a9c3]">{t.access}</p>
-          </div>
+
+          <label className="grid gap-1 text-right">
+            <span className="inline-flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#93a9c3]">
+              <Globe2 size={13} />
+              {t.languageLabel}
+            </span>
+            <select
+              value={lang}
+              onChange={(event) => setLanguage(event.target.value)}
+              className="rounded-full border border-white/10 bg-white/6 px-3 py-2 text-sm font-semibold text-white outline-none transition hover:bg-white/10"
+            >
+              {languageOptions.map((option) => (
+                <option key={option.code} value={option.code} className="bg-[#07111c] text-white">
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <div className="mb-6 grid grid-cols-2 rounded-[22px] border border-white/8 bg-white/4 p-1">
@@ -350,6 +401,7 @@ export default function Onboarding() {
                 <input
                   type="date"
                   value={registerForm.birthDate}
+                  max={maxBirthDate}
                   onChange={(event) =>
                     setRegisterForm((current) => ({ ...current, birthDate: event.target.value }))
                   }
@@ -373,6 +425,29 @@ export default function Onboarding() {
                   required
                 />
               </label>
+
+              <label className="flex items-start gap-3 rounded-[20px] border border-white/8 bg-white/[0.04] px-4 py-4">
+                <input
+                  type="checkbox"
+                  checked={registerForm.acceptedTerms}
+                  onChange={(event) =>
+                    setRegisterForm((current) => ({ ...current, acceptedTerms: event.target.checked }))
+                  }
+                  className="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-primary"
+                  required
+                />
+                <span className="text-sm leading-6 text-[#b8c4d2]">
+                  {t.termsLabel}{" "}
+                  <Link
+                    href={withBasePath("/legal/terms-and-privacy.html")}
+                    target="_blank"
+                    className="font-semibold text-primary underline-offset-4 hover:underline"
+                  >
+                    {t.termsLink}
+                  </Link>
+                  .
+                </span>
+              </label>
             </>
           )}
 
@@ -391,6 +466,11 @@ export default function Onboarding() {
             <ArrowRight className="h-5 w-5" />
           </button>
         </form>
+
+        <div className="mt-5 flex items-center gap-2 text-xs text-[#92a7bf]">
+          <ShieldCheck size={14} className="text-primary" />
+          <span>{t.termsLink}</span>
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { LocationProvider } from "@/components/LocationProvider";
+import { MessageNotifications } from "@/components/MessageNotifications";
 import Onboarding from "@/components/Onboarding";
 import TabBar from "@/components/TabBar";
 import { ToastProvider } from "@/components/ToastProvider";
@@ -55,6 +56,7 @@ export default async function RootLayout({
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(133,194,255,0.08),transparent_32%),radial-gradient(circle_at_bottom,rgba(103,232,178,0.08),transparent_28%)]" />
                   </div>
 
+                  <MessageNotifications currentUserId={user.id} />
                   <main className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">{children}</main>
                   <TabBar />
                 </>

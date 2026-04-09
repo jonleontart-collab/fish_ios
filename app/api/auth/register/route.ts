@@ -15,55 +15,73 @@ type RegisterPayload = {
   handle?: string;
   birthDate?: string;
   password?: string;
+  acceptedTerms?: boolean;
   lang?: string;
 };
 
 const errors: Record<
   LanguageCode,
-  Record<"missing" | "passwordShort" | "taken" | "birthDate" | "generic", string>
+  Record<"missing" | "passwordShort" | "taken" | "birthDate" | "terms" | "generic", string>
 > = {
   ru: {
     missing: "Все поля регистрации обязательны.",
     passwordShort: "Пароль должен быть не короче 6 символов.",
     taken: "Этот никнейм уже занят.",
-    birthDate: "Некорректная дата рождения.",
+    birthDate: "Укажи реальную дату рождения. Будущая дата недопустима, минимальный возраст — 13 лет.",
+    terms: "Нужно принять условия сервиса и политику данных.",
     generic: "Не удалось создать пользователя.",
   },
   en: {
     missing: "All registration fields are required.",
     passwordShort: "Password must be at least 6 characters long.",
     taken: "This nickname is already taken.",
-    birthDate: "Invalid birth date.",
+    birthDate: "Use a real birth date. It cannot be in the future and the minimum age is 13.",
+    terms: "You must accept the Terms and Privacy Notice.",
     generic: "Could not create the user.",
   },
   es: {
     missing: "Todos los campos de registro son obligatorios.",
     passwordShort: "La contraseña debe tener al menos 6 caracteres.",
     taken: "Este apodo ya está ocupado.",
-    birthDate: "Fecha de nacimiento no válida.",
+    birthDate: "Usa una fecha de nacimiento real. No puede estar en el futuro y la edad mínima es 13 años.",
+    terms: "Debes aceptar los Términos y la política de datos.",
     generic: "No se pudo crear el usuario.",
   },
   fr: {
     missing: "Tous les champs d'inscription sont obligatoires.",
     passwordShort: "Le mot de passe doit contenir au moins 6 caractères.",
     taken: "Ce pseudo est déjà pris.",
-    birthDate: "Date de naissance invalide.",
+    birthDate: "Utilisez une vraie date de naissance. Elle ne peut pas être future et l’âge minimum est 13 ans.",
+    terms: "Vous devez accepter les Conditions et la notice de confidentialité.",
     generic: "Impossible de créer l'utilisateur.",
   },
   pt: {
     missing: "Todos os campos de cadastro são obrigatórios.",
     passwordShort: "A senha deve ter pelo menos 6 caracteres.",
     taken: "Este apelido já está em uso.",
-    birthDate: "Data de nascimento inválida.",
+    birthDate: "Use uma data de nascimento real. Ela não pode estar no futuro e a idade mínima é 13 anos.",
+    terms: "Você precisa aceitar os Termos e o aviso de privacidade.",
     generic: "Não foi possível criar o usuário.",
   },
 };
+
+function getAgeInYears(birthDate: Date, now: Date) {
+  let years = now.getUTCFullYear() - birthDate.getUTCFullYear();
+  const monthDiff = now.getUTCMonth() - birthDate.getUTCMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && now.getUTCDate() < birthDate.getUTCDate())) {
+    years -= 1;
+  }
+
+  return years;
+}
 
 export async function POST(req: Request) {
   const cookieStore = await cookies();
 
   try {
-    const { firstName, lastName, handle, birthDate, password, lang } = (await req.json()) as RegisterPayload;
+    const { firstName, lastName, handle, birthDate, password, acceptedTerms, lang } =
+      (await req.json()) as RegisterPayload;
     const language = normalizeLanguage(lang);
     const safeFirstName = firstName?.trim() ?? "";
     const safeLastName = lastName?.trim() ?? "";
@@ -78,6 +96,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: errors[language].passwordShort }, { status: 400 });
     }
 
+    if (!acceptedTerms) {
+      return NextResponse.json({ error: errors[language].terms }, { status: 400 });
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { handle: safeHandle },
       select: { id: true },
@@ -88,8 +110,13 @@ export async function POST(req: Request) {
     }
 
     const parsedBirthDate = new Date(birthDate);
+    const now = new Date();
 
-    if (Number.isNaN(parsedBirthDate.getTime())) {
+    if (
+      Number.isNaN(parsedBirthDate.getTime()) ||
+      parsedBirthDate > now ||
+      getAgeInYears(parsedBirthDate, now) < 13
+    ) {
       return NextResponse.json({ error: errors[language].birthDate }, { status: 400 });
     }
 
@@ -104,6 +131,7 @@ export async function POST(req: Request) {
         passwordHash: hashPassword(safePassword),
         avatarGradient: DEFAULT_AVATAR_GRADIENT,
         avatarPath: null,
+        acceptedTermsAt: now,
       },
     });
 

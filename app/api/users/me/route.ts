@@ -24,6 +24,7 @@ const profileSchema = z.object({
   ),
   preferredStyles: z.string().trim().max(180).optional(),
   homeWater: z.string().trim().max(120).optional(),
+  showInventory: z.enum(["true", "false"]).optional(),
 });
 
 export async function PATCH(request: Request) {
@@ -41,6 +42,7 @@ export async function PATCH(request: Request) {
     experienceYears: formData.get("experienceYears"),
     preferredStyles: formData.get("preferredStyles"),
     homeWater: formData.get("homeWater"),
+    showInventory: formData.get("showInventory"),
   });
 
   if (!parsed.success) {
@@ -66,6 +68,7 @@ export async function PATCH(request: Request) {
       experienceYears: parsed.data.experienceYears ?? null,
       preferredStyles: parsed.data.preferredStyles || null,
       homeWater: parsed.data.homeWater || null,
+      showInventory: parsed.data.showInventory === "true",
       avatarPath: avatarFile?.publicPath ?? undefined,
       bannerPath: bannerFile?.publicPath ?? undefined,
     },
@@ -79,6 +82,7 @@ export async function PATCH(request: Request) {
       experienceYears: true,
       preferredStyles: true,
       homeWater: true,
+      showInventory: true,
       avatarGradient: true,
       avatarPath: true,
       bannerPath: true,
