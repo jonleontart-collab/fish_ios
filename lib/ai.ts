@@ -326,7 +326,8 @@ export async function discoverNearbyPlaces(input: {
   region?: string | null;
   country?: string | null;
 }) {
-  const { apiKey, model } = getGeminiConfig();
+  const apiKey = process.env.GEMINI_API_KEY;
+  const model = process.env.GEMINI_MAPS_MODEL || "gemini-2.5-flash-lite";
 
   if (!apiKey) {
     return [] satisfies NearbyAiPlace[];

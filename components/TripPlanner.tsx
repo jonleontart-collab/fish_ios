@@ -22,7 +22,7 @@ type PlaceOption = {
   slug: string;
   name: string;
   city: string;
-  source: "SEEDED" | "GEMINI" | "USER";
+  source: "SEEDED" | "GEMINI" | "DISCOVERED" | "USER";
 };
 
 type TripItem = {

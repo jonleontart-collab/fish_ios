@@ -1,6 +1,6 @@
 'use client';
 
-import { useDeferredValue, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
@@ -28,7 +28,7 @@ type ExplorePlace = {
   depthMeters: number | null;
   coverImage: string | null;
   displayImage: string | null;
-  source: "SEEDED" | "GEMINI" | "USER";
+  source: "SEEDED" | "GEMINI" | "DISCOVERED" | "USER";
   sourceUrl: string | null;
   fishSpeciesList: string[];
   amenitiesList: string[];
@@ -82,6 +82,8 @@ const translations: TranslationMap<{
   noPhoto: string;
   searchPlaceholder: string;
   aiAnalysis: string;
+  searchAction: string;
+  searchArea: string;
   newRating: string;
   speciesCount: (count: number) => string;
   nothingFound: string;
@@ -111,6 +113,8 @@ const translations: TranslationMap<{
     noPhoto: "Нет фото",
     searchPlaceholder: "Поиск по базе, геолокации, улову...",
     aiAnalysis: "AI анализ",
+    searchAction: "Найти место",
+    searchArea: "Искать в этой области",
     newRating: "Новая",
     speciesCount: (count) => `+${count} видов`,
     nothingFound: "Ничего не найдено",
@@ -140,6 +144,8 @@ const translations: TranslationMap<{
     noPhoto: "No photo",
     searchPlaceholder: "Search by spots, location, or catches...",
     aiAnalysis: "AI analysis",
+    searchAction: "Search places",
+    searchArea: "Search this area",
     newRating: "New",
     speciesCount: (count) => `+${count} species`,
     nothingFound: "Nothing found",
@@ -169,6 +175,8 @@ const translations: TranslationMap<{
     noPhoto: "Sin foto",
     searchPlaceholder: "Buscar por lugares, geolocalización o capturas...",
     aiAnalysis: "Análisis IA",
+    searchAction: "Buscar lugar",
+    searchArea: "Buscar en esta zona",
     newRating: "Nueva",
     speciesCount: (count) => `+${count} especies`,
     nothingFound: "No se encontró nada",
@@ -198,6 +206,8 @@ const translations: TranslationMap<{
     noPhoto: "Sans photo",
     searchPlaceholder: "Recherche par spots, géolocalisation ou prises...",
     aiAnalysis: "Analyse IA",
+    searchAction: "Chercher un spot",
+    searchArea: "Chercher dans cette zone",
     newRating: "Nouveau",
     speciesCount: (count) => `+${count} espèces`,
     nothingFound: "Aucun résultat",
@@ -227,6 +237,8 @@ const translations: TranslationMap<{
     noPhoto: "Sem foto",
     searchPlaceholder: "Buscar por pontos, geolocalização ou capturas...",
     aiAnalysis: "Análise IA",
+    searchAction: "Buscar local",
+    searchArea: "Buscar nesta área",
     newRating: "Novo",
     speciesCount: (count) => `+${count} espécies`,
     nothingFound: "Nada encontrado",
@@ -286,11 +298,21 @@ async function requestNearbyPlaces(location: {
   country?: string | null;
   source: string;
   resolvedAt: string;
+}, options?: {
+  query?: string;
+  areaCenter?: { latitude: number; longitude: number } | null;
+  radiusKm?: number;
 }) {
   const response = await fetch(apiPath("/api/places/discover"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(location),
+    body: JSON.stringify({
+      ...location,
+      query: options?.query?.trim() || null,
+      areaLatitude: options?.areaCenter?.latitude ?? null,
+      areaLongitude: options?.areaCenter?.longitude ?? null,
+      radiusKm: options?.radiusKm ?? 200,
+    }),
   });
   if (!response.ok) throw new Error("Discovery failed");
   return (await response.json()) as { places: ExplorePlace[] };
@@ -306,6 +328,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
   const [query, setQuery] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [placesState, setPlacesState] = useState(places);
+  const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number } | null>(null);
   const [selectedMapPlace, setSelectedMapPlace] = useState<ExplorePlace | null>(null);
   const [routeTo, setRouteTo] = useState<ExplorePlace | null>(null);
   
@@ -313,14 +336,31 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
 
-  const deferredQuery = useDeferredValue(query);
   const [, startTransition] = useTransition();
 
-  async function scanNearby(currentLocation = location) {
+  useEffect(() => {
+    if (location && !mapCenter) {
+      setMapCenter({
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+    }
+  }, [location, mapCenter]);
+
+  async function scanNearby(options?: {
+    currentLocation?: typeof location;
+    query?: string;
+    areaCenter?: { latitude: number; longitude: number } | null;
+  }) {
+    const currentLocation = options?.currentLocation ?? location;
     if (!currentLocation || isScanning) return;
     setIsScanning(true);
     try {
-      const payload = await requestNearbyPlaces(currentLocation);
+      const payload = await requestNearbyPlaces(currentLocation, {
+        query: options?.query ?? query,
+        areaCenter: options?.areaCenter ?? mapCenter ?? currentLocation,
+        radiusKm: 200,
+      });
       setPlacesState(payload.places);
     } catch {
       // ignore
@@ -332,15 +372,8 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
   const filteredPlaces = placesState.filter((place) => {
     let matchesFilter = true;
     if (filter !== "ALL") matchesFilter = place.type === filter;
-    
-    // Improved search: Includes description & amenities
-    const searchText = [
-      place.name, place.city, place.region, place.shortDescription,
-      ...place.fishSpeciesList, ...place.amenitiesList
-    ].join(" ").toLowerCase();
-    
-    const matchesQuery = searchText.includes(deferredQuery.trim().toLowerCase());
-    return matchesFilter && matchesQuery;
+
+    return matchesFilter;
   });
 
   const handleDownloadRoute = () => {
@@ -372,12 +405,18 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
                 placeholder={t.searchPlaceholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void scanNearby({ query });
+                  }
+                }}
                 className="w-full bg-surface-strong/90 backdrop-blur-3xl border border-white/10 rounded-[22px] py-4 pl-12 pr-12 text-[15px] font-bold text-white shadow-[0_8px_32px_rgba(0,0,0,0.5)] placeholder:text-white/40 focus:outline-none focus:border-primary/50 transition-colors"
               />
               <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
               
-              <button suppressHydrationWarning onClick={() => void scanNearby()} disabled={!location || isScanning} className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-primary hover:text-black transition disabled:opacity-50">
-                {isScanning ? <Loader2 size={16} className="animate-spin" /> : <Navigation2 size={16} />}
+              <button suppressHydrationWarning onClick={() => void scanNearby({ query })} disabled={!location || isScanning} className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-primary hover:text-black transition disabled:opacity-50">
+                {isScanning ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               </button>
             </div>
 
@@ -405,12 +444,32 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
          </div>
       </div>
 
+      {view === "map" ? (
+        <div className="fixed top-[118px] inset-x-0 z-[110] flex justify-center px-4 pointer-events-none">
+          <button
+            type="button"
+            onClick={() =>
+              void scanNearby({
+                query,
+                areaCenter: mapCenter ?? location ?? null,
+              })
+            }
+            disabled={!location || isScanning}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/65 px-5 py-3 text-[13px] font-bold text-white shadow-[0_16px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl transition hover:bg-black/80 disabled:opacity-50"
+          >
+            {isScanning ? <Loader2 size={16} className="animate-spin" /> : <Navigation2 size={16} />}
+            <span>{t.searchArea}</span>
+          </button>
+        </div>
+      ) : null}
+
       {/* Main Content Area */}
       <div className={`flex-1 ${view === "map" ? "fixed inset-0 z-0 h-full w-full" : "pt-[130px] px-4 pb-32"}`}>
         {view === "map" ? (
           <DynamicMap 
             places={filteredPlaces} 
             routeTo={routeTo} 
+            onViewportChange={setMapCenter}
             onPlaceSelect={(place) => {
               const fullPlace = filteredPlaces.find(p => p.slug === place.slug);
               if (fullPlace) setSelectedMapPlace(fullPlace);

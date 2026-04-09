@@ -156,30 +156,35 @@ const chatVisibilityLabels: Record<LanguageCode, Record<"OPEN" | "PRIVATE", stri
   },
 };
 
-const placeSourceLabels: Record<LanguageCode, Record<"SEEDED" | "GEMINI" | "USER", string>> = {
+const placeSourceLabels: Record<LanguageCode, Record<"SEEDED" | "GEMINI" | "DISCOVERED" | "USER", string>> = {
   ru: {
     SEEDED: "База",
     GEMINI: "Подборка",
+    DISCOVERED: "Парсер",
     USER: "Точка сообщества",
   },
   en: {
     SEEDED: "Base",
     GEMINI: "Curated",
+    DISCOVERED: "Parser",
     USER: "Community spot",
   },
   es: {
     SEEDED: "Base",
     GEMINI: "Selección",
+    DISCOVERED: "Parser",
     USER: "Lugar de la comunidad",
   },
   fr: {
     SEEDED: "Base",
     GEMINI: "Sélection",
+    DISCOVERED: "Parser",
     USER: "Spot communauté",
   },
   pt: {
     SEEDED: "Base",
     GEMINI: "Seleção",
+    DISCOVERED: "Parser",
     USER: "Ponto da comunidade",
   },
 };
@@ -249,6 +254,6 @@ export function chatVisibilityLabel(visibility: "OPEN" | "PRIVATE", lang: Langua
   return chatVisibilityLabels[lang][visibility];
 }
 
-export function placeSourceLabel(source: "SEEDED" | "GEMINI" | "USER", lang: LanguageCode = DEFAULT_LANGUAGE) {
+export function placeSourceLabel(source: "SEEDED" | "GEMINI" | "DISCOVERED" | "USER", lang: LanguageCode = DEFAULT_LANGUAGE) {
   return placeSourceLabels[lang][source];
 }

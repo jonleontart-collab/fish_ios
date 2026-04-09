@@ -1,11 +1,15 @@
 import { z } from "zod";
-import { discoverNearbyPlaces } from "@/lib/ai";
+
 import { distanceKmBetween } from "@/lib/geo";
-import { prisma } from "@/lib/prisma";
-import { createPlaceSlug } from "@/lib/slug";
-import { splitPipeList } from "@/lib/format";
-import { enrichPlacesInBackground } from "@/lib/apify";
 import { logger } from "@/lib/logger";
+import {
+  getSearchAnchor,
+  PLACE_SEARCH_RADIUS_KM,
+  searchPlacesViaApify,
+  upsertDiscoveredPlaces,
+} from "@/lib/place-search";
+import { prisma } from "@/lib/prisma";
+import { splitPipeList } from "@/lib/format";
 
 const discoverSchema = z.object({
   latitude: z.number().min(-90).max(90),
@@ -13,40 +17,46 @@ const discoverSchema = z.object({
   city: z.string().trim().nullable().optional(),
   region: z.string().trim().nullable().optional(),
   country: z.string().trim().nullable().optional(),
+  query: z.string().trim().max(140).nullable().optional(),
+  areaLatitude: z.number().min(-90).max(90).nullable().optional(),
+  areaLongitude: z.number().min(-180).max(180).nullable().optional(),
+  radiusKm: z.number().min(20).max(300).nullable().optional(),
 });
 
-function mapPlaceForClient(
-  place: {
+type DbPlace = {
+  id: string;
+  slug: string;
+  name: string;
+  city: string;
+  region: string;
+  shortDescription: string;
+  description: string;
+  type: "WILD" | "PAYED" | "CLUB" | "SHOP" | "EVENT_SOS";
+  distanceKm: number | null;
+  rating: number;
+  depthMeters: number | null;
+  coverImage: string | null;
+  source: "SEEDED" | "GEMINI" | "DISCOVERED" | "USER";
+  sourceUrl: string | null;
+  fishSpecies: string;
+  amenities: string;
+  bestMonths: string;
+  latitude: number;
+  longitude: number;
+  createdBy: {
     id: string;
-    slug: string;
     name: string;
-    city: string;
-    region: string;
-    shortDescription: string;
-    description: string;
-    type: "WILD" | "PAYED" | "CLUB" | "SHOP" | "EVENT_SOS";
-    distanceKm: number | null;
-    rating: number;
-    depthMeters: number | null;
-    coverImage: string | null;
-    source: "SEEDED" | "GEMINI" | "USER";
-    sourceUrl: string | null;
-    fishSpecies: string;
-    amenities: string;
-    bestMonths: string;
-    latitude: number;
-    longitude: number;
-    createdBy: {
-      id: string;
-      name: string;
-      handle: string;
-    } | null;
-    photos: Array<{ imagePath: string }>;
-    _count: {
-      catches: number;
-      photos: number;
-    };
-  },
+    handle: string;
+  } | null;
+  photos: Array<{ imagePath: string }>;
+  _count: {
+    catches: number;
+    photos: number;
+  };
+};
+
+function mapPlaceForClient(
+  place: DbPlace,
   latitude: number,
   longitude: number,
 ) {
@@ -63,6 +73,36 @@ function mapPlaceForClient(
   };
 }
 
+function matchesQuery(
+  place: {
+    name: string;
+    city: string;
+    region: string;
+    shortDescription: string;
+    description: string;
+    sourceUrl: string | null;
+  },
+  query: string,
+) {
+  if (!query) {
+    return true;
+  }
+
+  const normalizedQuery = query.toLowerCase();
+  const haystack = [
+    place.name,
+    place.city,
+    place.region,
+    place.shortDescription,
+    place.description,
+    place.sourceUrl ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(normalizedQuery);
+}
+
 export async function POST(request: Request) {
   const payload = await request.json();
   const parsed = discoverSchema.safeParse(payload);
@@ -71,125 +111,58 @@ export async function POST(request: Request) {
     return Response.json({ error: "Некорректные координаты для поиска мест." }, { status: 400 });
   }
 
-  const { latitude, longitude, city, region, country } = parsed.data;
+  const {
+    latitude,
+    longitude,
+    city,
+    region,
+    country,
+    query: rawQuery,
+    areaLatitude,
+    areaLongitude,
+    radiusKm: requestedRadius,
+  } = parsed.data;
+  const query = rawQuery?.trim() ?? "";
+  const radiusKm = requestedRadius ?? PLACE_SEARCH_RADIUS_KM;
+  const viewerCenter = { latitude, longitude };
+  const areaCenter =
+    typeof areaLatitude === "number" && typeof areaLongitude === "number"
+      ? { latitude: areaLatitude, longitude: areaLongitude }
+      : viewerCenter;
+
   logger.info("Discover API", "incoming", {
     latitude,
     longitude,
     city,
     region,
     country,
+    query,
+    areaCenter,
+    radiusKm,
   });
 
-  const discovered = await discoverNearbyPlaces({
-    latitude,
-    longitude,
-    city,
-    region,
-    country,
+  const parserDiscovered = await searchPlacesViaApify({
+    query,
+    center: areaCenter,
+    radiusKm,
+    viewerCity: city,
+    viewerRegion: region,
+    viewerCountry: country,
   });
 
-  const newOrUpdatedPlaces = [];
-
-  for (const item of discovered) {
-    const slug = createPlaceSlug(item.name, item.latitude, item.longitude);
-    const existing =
-      (item.sourceUrl
-        ? await prisma.place.findFirst({
-            where: { sourceUrl: item.sourceUrl },
-          })
-        : null) ??
-      (await prisma.place.findUnique({
-        where: { slug },
-      }));
-
-    if (existing) {
-      const updated = await prisma.place.update({
-        where: { id: existing.id },
-        data: {
-          slug,
-          name: item.name,
-          shortDescription: item.shortDescription,
-          description: item.description,
-          type: item.type,
-          city: item.city,
-          region: item.region,
-          latitude: item.latitude,
-          longitude: item.longitude,
-          distanceKm: distanceKmBetween(
-            { latitude, longitude },
-            { latitude: item.latitude, longitude: item.longitude },
-          ),
-          rating: item.rating,
-          depthMeters: item.depthMeters,
-          fishSpecies: item.fishSpecies.join("|"),
-          amenities: item.amenities.join("|"),
-          bestMonths: item.bestMonths.join("|"),
-          coverImage: item.imageUrl,
-          source: "GEMINI",
-          sourceUrl: item.sourceUrl,
-          aiSummary: item.aiSummary,
-        },
-      });
-      newOrUpdatedPlaces.push(updated);
-      continue;
-    }
-
-    const created = await prisma.place.create({
-      data: {
-        slug,
-        name: item.name,
-        shortDescription: item.shortDescription,
-        description: item.description,
-        type: item.type,
-        city: item.city,
-        region: item.region,
-        latitude: item.latitude,
-        longitude: item.longitude,
-        distanceKm: distanceKmBetween(
-          { latitude, longitude },
-          { latitude: item.latitude, longitude: item.longitude },
-        ),
-        rating: item.rating,
-        depthMeters: item.depthMeters,
-        fishSpecies: item.fishSpecies.join("|"),
-        amenities: item.amenities.join("|"),
-        bestMonths: item.bestMonths.join("|"),
-        coverImage: item.imageUrl,
-        source: "GEMINI",
-        sourceUrl: item.sourceUrl,
-        aiSummary: item.aiSummary,
-      },
+  if (parserDiscovered.length > 0) {
+    await upsertDiscoveredPlaces({
+      places: parserDiscovered,
+      distanceOrigin: areaCenter,
     });
-    newOrUpdatedPlaces.push(created);
-  }
-
-  const placesToEnrich = newOrUpdatedPlaces.filter((p) => !p.coverImage && p.source === "GEMINI");
-  
-  // Repair logic: Also find existing places in the area that are missing images
-  const existingMissingImages = await prisma.place.findMany({
-    where: {
-      source: "GEMINI",
-      coverImage: null,
-      latitude: { gte: latitude - 1, lte: latitude + 1 },
-      longitude: { gte: longitude - 1, lte: longitude + 1 },
-      id: { notIn: newOrUpdatedPlaces.map(p => p.id) }
-    },
-    take: 5
-  });
-
-  const allToEnrich = [...placesToEnrich, ...existingMissingImages];
-
-  if (allToEnrich.length > 0) {
-    logger.info("Discover API", `Performing synchronous enrichment for ${allToEnrich.length} places (${placesToEnrich.length} new, ${existingMissingImages.length} existing)...`);
-    try {
-      await enrichPlacesInBackground(allToEnrich);
-      logger.info("Discover API", "Enrichment completed successfully.");
-    } catch (err) {
-      logger.error("Apify", "Apify Enrichment Error", err);
-    }
   }
 
   const places = await prisma.place.findMany({
+    where: {
+      source: {
+        not: "SEEDED",
+      },
+    },
     include: {
       createdBy: {
         select: {
@@ -211,9 +184,31 @@ export async function POST(request: Request) {
     },
   });
 
+  const localMatches = query ? places.filter((place) => matchesQuery(place, query)) : [];
+  const searchAnchor = getSearchAnchor({
+    viewer: viewerCenter,
+    areaCenter,
+    candidates: [...parserDiscovered, ...localMatches],
+  });
+  const matchedSlugs = new Set(
+    localMatches.map((place) => place.slug).concat(
+      parserDiscovered.map((place) => place.name.toLowerCase()),
+    ),
+  );
+
   const nearbyPlaces = places
-    .map((place) => mapPlaceForClient(place, latitude, longitude))
-    .filter((place) => place.distanceKm <= 160)
+    .map((place) => mapPlaceForClient(place, searchAnchor.latitude, searchAnchor.longitude))
+    .filter((place) => {
+      if (place.distanceKm > radiusKm) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      return matchesQuery(place, query) || matchedSlugs.has(place.slug) || matchedSlugs.has(place.name.toLowerCase());
+    })
     .sort((left, right) => {
       if (left.distanceKm !== right.distanceKm) {
         return left.distanceKm - right.distanceKm;
@@ -221,11 +216,13 @@ export async function POST(request: Request) {
 
       return right.rating - left.rating;
     })
-    .slice(0, 30);
+    .slice(0, 40);
 
   logger.info("Discover API", "result", {
-    discoveredCount: discovered.length,
+    query,
+    discoveredCount: parserDiscovered.length,
     nearbyCount: nearbyPlaces.length,
+    searchAnchor,
     sample: nearbyPlaces.slice(0, 3).map((place) => ({
       name: place.name,
       source: place.source,
@@ -235,6 +232,8 @@ export async function POST(request: Request) {
 
   return Response.json({
     places: nearbyPlaces,
-    discovered: discovered.length,
+    discovered: parserDiscovered.length,
+    radiusKm,
+    searchAnchor,
   });
 }

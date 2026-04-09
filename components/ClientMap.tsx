@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Circle, MapContainer, Marker, Polyline, TileLayer, useMap, ZoomControl } from "react-leaflet";
+import { Circle, MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents, ZoomControl } from "react-leaflet";
 import { Crosshair } from "lucide-react";
 
 import { useLanguage } from "@/components/LanguageProvider";
@@ -127,12 +127,6 @@ function MapViewportController({
       return;
     }
 
-    if (location && !initializedToUser.current) {
-      initializedToUser.current = true;
-      map.setView([location.latitude, location.longitude], 11);
-      return;
-    }
-
     const points: [number, number][] = places.map((place) => [place.latitude, place.longitude]);
     if (location) {
       points.push([location.latitude, location.longitude]);
@@ -141,6 +135,10 @@ function MapViewportController({
     if (points.length === 0) {
       map.setView([55.751244, 37.618423], 9);
       return;
+    }
+
+    if (!initializedToUser.current) {
+      initializedToUser.current = true;
     }
 
     if (points.length === 1) {
@@ -156,14 +154,38 @@ function MapViewportController({
   return null;
 }
 
+function MapViewportReporter({
+  onViewportChange,
+}: {
+  onViewportChange?: ((center: { latitude: number; longitude: number }) => void) | undefined;
+}) {
+  useMapEvents({
+    moveend(event) {
+      if (!onViewportChange) {
+        return;
+      }
+
+      const center = event.target.getCenter();
+      onViewportChange({
+        latitude: center.lat,
+        longitude: center.lng,
+      });
+    },
+  });
+
+  return null;
+}
+
 export default function ClientMap({
   places,
   onPlaceSelect,
   routeTo,
+  onViewportChange,
 }: {
   places: MapPlace[];
   onPlaceSelect?: (place: MapPlace) => void;
   routeTo?: { latitude: number; longitude: number } | null;
+  onViewportChange?: (center: { latitude: number; longitude: number }) => void;
 }) {
   const { lang } = useLanguage();
   const { location, status, error, refreshLocation } = useLocation();
@@ -191,6 +213,7 @@ export default function ClientMap({
       <MapContainer center={center as [number, number]} zoom={9} scrollWheelZoom={false} zoomControl={false} className="absolute inset-0 z-0 h-full w-full bg-background">
         <ZoomControl position="bottomright" />
         <MapViewportController places={places} focusUserRequest={0} routeTo={routeTo} />
+        <MapViewportReporter onViewportChange={onViewportChange} />
 
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
