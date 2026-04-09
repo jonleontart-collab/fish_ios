@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Shield, Users } from "lucide-react";
@@ -136,6 +137,12 @@ export default async function ChatsPage() {
   const lang = await getServerLanguage();
   const t = translations[lang];
   const data = await getChatsInboxData();
+  const recentChatSceneStyle = {
+    "--panel-scene-image": `url('${withBasePath("/modal-backgrounds/chat-sheet-bg.png")}')`,
+  } as CSSProperties;
+  const openChatSceneStyle = {
+    "--panel-scene-image": `url('${withBasePath("/patterns/pattern-chat-sonar.png")}')`,
+  } as CSSProperties;
 
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
@@ -177,9 +184,10 @@ export default async function ChatsPage() {
                 <Link
                   key={chatItem.id}
                   href={`/chats/${chatItem.slug}`}
-                  className={`glass-panel block rounded-[26px] border p-4 transition hover:border-primary/20 ${
+                  className={`glass-panel panel-scene block rounded-[26px] border p-4 transition hover:border-primary/20 ${
                     chatItem.isSystem ? "border-primary/20 bg-primary/[0.06]" : "border-border-subtle"
                   }`}
+                  style={recentChatSceneStyle}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
@@ -245,7 +253,10 @@ export default async function ChatsPage() {
               );
             })
           ) : (
-            <div className="glass-panel rounded-[28px] border border-dashed border-border-subtle p-5 text-sm text-text-muted">
+            <div
+              className="glass-panel panel-scene rounded-[28px] border border-dashed border-border-subtle p-5 text-sm text-text-muted"
+              style={recentChatSceneStyle}
+            >
               {t.noOwnChats}
             </div>
           )}
@@ -257,7 +268,11 @@ export default async function ChatsPage() {
         <div className="space-y-3">
           {data.discoverableChats.length > 0 ? (
             data.discoverableChats.map((chatItem) => (
-              <div key={chatItem.id} className="glass-panel rounded-[26px] border border-border-subtle p-4">
+              <div
+                key={chatItem.id}
+                className="glass-panel panel-scene rounded-[26px] border border-border-subtle p-4"
+                style={openChatSceneStyle}
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex min-w-0 gap-3">
                     <div
@@ -294,7 +309,10 @@ export default async function ChatsPage() {
               </div>
             ))
           ) : (
-            <div className="glass-panel rounded-[28px] border border-dashed border-border-subtle p-5 text-sm text-text-muted">
+            <div
+              className="glass-panel panel-scene rounded-[28px] border border-dashed border-border-subtle p-5 text-sm text-text-muted"
+              style={openChatSceneStyle}
+            >
               {t.noOpenChats}
             </div>
           )}

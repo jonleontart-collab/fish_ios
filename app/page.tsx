@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -178,7 +179,10 @@ export default async function Home() {
           dashboard.recentCatches.map((catchItem) => <CatchCard key={catchItem.id} catchItem={catchItem} />)
         ) : (
           <div className="px-4 sm:px-0">
-            <div className="bento-card border-dashed p-6 text-center">
+            <div
+              className="glass-panel panel-scene rounded-[30px] border border-dashed border-border-subtle p-6 text-center"
+              style={{ "--panel-scene-image": `url('${withBasePath("/graphics/empty-catches-lure.png")}')` } as CSSProperties}
+            >
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/5">
                 <Plus className="text-text-muted" size={24} />
               </div>

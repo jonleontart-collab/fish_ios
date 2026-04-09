@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Drawer } from "vaul";
 import { Loader2, MessagesSquare, Plus, X } from "lucide-react";
 
@@ -86,9 +87,11 @@ const translations: TranslationMap<{
 
 export function CreateChatForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { lang } = useLanguage();
   const { pushToast } = useToast();
   const t = translations[lang];
+  const lastPresetRef = useRef("");
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -99,6 +102,35 @@ export function CreateChatForm() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    const composePreset = searchParams.get("compose");
+    if (composePreset !== "fish-request") {
+      return;
+    }
+
+    const location = searchParams.get("location")?.trim() || (lang === "ru" ? "вашему району" : "your area");
+    const summary = searchParams.get("summary")?.trim();
+    const presetKey = `${composePreset}:${location}:${summary ?? ""}`;
+
+    if (lastPresetRef.current === presetKey) {
+      return;
+    }
+
+    lastPresetRef.current = presetKey;
+    setForm({
+      title: lang === "ru" ? `Где сейчас клюет: ${location}` : `Where is the bite active: ${location}`,
+      description:
+        summary ||
+        (lang === "ru"
+          ? `Ищу свежую информацию по клеву, рабочим точкам и видам рыбы в районе ${location}.`
+          : `Looking for fresh bite reports, active spots, and target species near ${location}.`),
+      visibility: "OPEN",
+      locationLabel: location,
+      inviteHandles: "",
+    });
+    setOpen(true);
+  }, [lang, searchParams]);
 
   async function handleCreateChat() {
     setError("");

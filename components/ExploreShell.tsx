@@ -400,6 +400,34 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
 
     return matchesFilter;
   });
+  const fishablePlaces = filteredPlaces.filter((place) => place.type !== "SHOP");
+  const placeCounts = {
+    wild: fishablePlaces.filter((place) => place.type === "WILD").length,
+    paid: fishablePlaces.filter((place) => place.type === "PAYED").length,
+    club: fishablePlaces.filter((place) => place.type === "CLUB").length,
+    shops: filteredPlaces.filter((place) => place.type === "SHOP").length,
+  };
+  const bestPlace =
+    [...fishablePlaces].sort((left, right) => {
+      const leftScore = left.rating * 10 + (left._count.catches ?? 0) + (left.fishSpeciesList.length ?? 0) * 2;
+      const rightScore = right.rating * 10 + (right._count.catches ?? 0) + (right.fishSpeciesList.length ?? 0) * 2;
+
+      return rightScore - leftScore;
+    })[0] ?? null;
+  const topSpecies = (() => {
+    const counts = new Map<string, number>();
+    for (const place of fishablePlaces) {
+      for (const species of place.fishSpeciesList) {
+        counts.set(species, (counts.get(species) ?? 0) + 1);
+      }
+    }
+
+    return [...counts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? t.predatorFallback;
+  })();
+  const fishChatSummary =
+    lang === "ru"
+      ? `Собрал карту по району. В выдаче ${fishablePlaces.length} водоемов, лучший рейтинг у ${bestPlace?.name ?? "этой зоны"}, чаще всего встречается ${topSpecies}. Нужны свежие отчеты по клеву.`
+      : `Built a map for this area. ${fishablePlaces.length} waters are in view, the top rated spot is ${bestPlace?.name ?? "this area"}, and ${topSpecies} appears most often. Need fresh bite reports.`;
 
   const handleDownloadRoute = () => {
     if (downloadProgress > 0) return;
@@ -702,30 +730,78 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
                     </div>
                  ) : (
                     <>
-                       <div className="text-[16px] leading-relaxed text-white">
-                          {t.aiSummary(filteredPlaces.length)}
-                          {filteredPlaces.some((p) => p.type === "WILD") && ` ${t.wildHint}`}
-                          {filteredPlaces.some((p) => p.type === "PAYED") && ` ${t.paidHint}`}
+                       <div className="rounded-[22px] border border-accent/20 bg-accent/10 p-4 text-[15px] leading-relaxed text-white">
+                          {lang === "ru"
+                            ? `В зоне видно ${fishablePlaces.length} водоемов и ${placeCounts.shops} магазинов. Это фактическая сводка по текущей выдаче, а не выдуманный текст.`
+                            : `${fishablePlaces.length} waters and ${placeCounts.shops} shops are currently in view. This summary is built from the actual results on screen.`}
                        </div>
-                       
-                       {/* Focus Area */}
+
+                       <div className="grid grid-cols-2 gap-3">
+                          <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                            <div className="text-xs uppercase tracking-wider text-text-muted">
+                              {lang === "ru" ? "Дикие" : "Wild"}
+                            </div>
+                            <div className="mt-2 text-lg font-semibold text-white">{placeCounts.wild}</div>
+                          </div>
+                          <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                            <div className="text-xs uppercase tracking-wider text-text-muted">
+                              {lang === "ru" ? "Платные" : "Paid"}
+                            </div>
+                            <div className="mt-2 text-lg font-semibold text-white">{placeCounts.paid}</div>
+                          </div>
+                          <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                            <div className="text-xs uppercase tracking-wider text-text-muted">
+                              {lang === "ru" ? "Клубы" : "Clubs"}
+                            </div>
+                            <div className="mt-2 text-lg font-semibold text-white">{placeCounts.club}</div>
+                          </div>
+                          <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                            <div className="text-xs uppercase tracking-wider text-text-muted">
+                              {lang === "ru" ? "Чаще встречается" : "Most common"}
+                            </div>
+                            <div className="mt-2 text-sm font-semibold text-white">{topSpecies}</div>
+                          </div>
+                       </div>
+
                        <div className="space-y-3">
                           <h3 className="font-semibold text-accent text-[13px] uppercase tracking-wider">{t.neuralResult}</h3>
                           <div className="rounded-[20px] bg-accent/10 border border-accent/20 p-4">
                             <div className="font-bold text-white mb-2">{t.bestSpot}</div>
-                            {filteredPlaces.length > 0 ? (
-                               <div className="text-[14px] text-white/80 leading-relaxed">
-                                  {t.bestSpotText(
-                                    filteredPlaces[0].name,
-                                    filteredPlaces[0].fishSpeciesList[0] || t.predatorFallback,
-                                  )}
+                            {bestPlace ? (
+                               <div className="space-y-2 text-[14px] text-white/80 leading-relaxed">
+                                  <div>
+                                    {lang === "ru"
+                                      ? `${bestPlace.name} выглядит сильнее остальных: рейтинг ${bestPlace.rating.toFixed(1)}, видов ${bestPlace.fishSpeciesList.length}, публикаций ${bestPlace._count.catches}.`
+                                      : `${bestPlace.name} stands out: rating ${bestPlace.rating.toFixed(1)}, ${bestPlace.fishSpeciesList.length} species, ${bestPlace._count.catches} catches.`}
+                                  </div>
+                                  <div>
+                                    {lang === "ru"
+                                      ? `По текущей карте логично начать с ${bestPlace.city || bestPlace.region} и проверить активность по ${topSpecies}.`
+                                      : `Based on the current map, start around ${bestPlace.city || bestPlace.region} and check activity for ${topSpecies}.`}
+                                  </div>
                                </div>
                             ) : (
                                <div className="text-[14px] text-white/80 leading-relaxed">{t.zoomHint}</div>
                             )}
                           </div>
                        </div>
-                       
+
+                       <Link
+                         href={{
+                           pathname: "/chats",
+                           query: {
+                             compose: "fish-request",
+                             location: location?.city || location?.region || "map area",
+                             summary: fishChatSummary,
+                           },
+                         }}
+                         onClick={() => setIsAiDrawerOpen(false)}
+                         className="flex w-full items-center justify-center gap-2 rounded-[22px] bg-primary py-4 text-[15px] font-bold text-black shadow-[0_12px_28px_rgba(103,232,178,0.28)] transition hover:bg-primary-strong"
+                       >
+                         <Sparkles size={18} />
+                         {lang === "ru" ? "Спросить рыбаков по этой зоне" : "Ask anglers about this area"}
+                       </Link>
+
                        <button onClick={() => { setIsAiDrawerOpen(false); void scanNearby(); }} className="w-full py-4 rounded-[22px] bg-white/10 text-white font-bold hover:bg-white/20 transition">
                           {t.rescan}
                        </button>

@@ -1,15 +1,19 @@
 'use client';
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   Cloud,
   Droplets,
+  Gauge,
   Loader2,
   MapPin,
+  MessageSquareQuote,
+  MoonStar,
   Navigation,
   Navigation2,
   Sparkles,
-  Waves,
+  SunMedium,
   Wind,
   X,
 } from "lucide-react";
@@ -23,11 +27,14 @@ type WeatherPayload = {
   temperatureC: number;
   pressureMm: number;
   windKmh: number;
+  cloudCover: number;
   biteIndex: number;
   biteLabel: string;
+  moonLabel: string;
   condition: string;
   sunrise: string;
   sunset: string;
+  isDay: boolean;
   source: "live" | "estimated";
 };
 
@@ -48,16 +55,8 @@ const translations: TranslationMap<{
   aiAnalysis: string;
   analyticsSummary: string;
   geoSummary: string;
-  greeting: (userName: string, temperature: string, pressure: string) => string;
-  whereToSearch: string;
-  shallowBays: string;
-  shallowBaysDescription: string;
-  dropOffs: (sunset: string) => string;
-  dropOffsDescription: string;
-  recommendedGear: string;
-  savedPlaces: string;
-  wind: string;
-  savedPlacesValue: (count: number) => string;
+  factsNow: string;
+  askCommunity: string;
 }> = {
   ru: {
     yourLocation: "Ваша локация",
@@ -74,19 +73,10 @@ const translations: TranslationMap<{
     low: "Низкая",
     biteNow: "Клев сейчас",
     aiAnalysis: "Анализ водоема от ИИ",
-    analyticsSummary: "Сводка аналитики",
+    analyticsSummary: "Факты по водоему",
     geoSummary: "Геосводка",
-    greeting: (userName, temperature, pressure) =>
-      `Привет, ${userName}. Сейчас около ${temperature}, давление держится на уровне ${pressure}. Такие условия обычно хорошо работают на бровках, свалах и спокойных окнах у береговой линии.`,
-    whereToSearch: "Где искать рыбу",
-    shallowBays: "Мелководные заливы",
-    shallowBaysDescription: "Вода здесь прогревается быстрее и подтягивает малька и мирную рыбу.",
-    dropOffs: (sunset) => `Глубокие бровки и свалы (закат: ${sunset})`,
-    dropOffsDescription: "Ближе к вечеру крупный хищник выходит из глубины к береговым перепадам.",
-    recommendedGear: "Рекомендуемые снасти",
-    savedPlaces: "Сохраненные места",
-    wind: "Ветер",
-    savedPlacesValue: (count) => `${count} точек сохранено`,
+    factsNow: "Факты на сейчас",
+    askCommunity: "Спросить рыбаков в чате",
   },
   en: {
     yourLocation: "Your location",
@@ -103,19 +93,10 @@ const translations: TranslationMap<{
     low: "Low",
     biteNow: "Bite now",
     aiAnalysis: "AI water analysis",
-    analyticsSummary: "Analytics summary",
+    analyticsSummary: "Water facts",
     geoSummary: "Geo summary",
-    greeting: (userName, temperature, pressure) =>
-      `Hi, ${userName}. It is around ${temperature}, and the pressure is ${pressure}. These conditions usually look best around drop-offs, ledges, and calmer shoreline pockets.`,
-    whereToSearch: "Where to search for fish",
-    shallowBays: "Shallow bays",
-    shallowBaysDescription: "Water warms faster here and draws baitfish and peaceful species.",
-    dropOffs: (sunset) => `Deep ledges and drop-offs (sunset: ${sunset})`,
-    dropOffsDescription: "Toward the evening, larger predators move from depth toward the shoreline edges.",
-    recommendedGear: "Recommended tackle",
-    savedPlaces: "Saved places",
-    wind: "Wind",
-    savedPlacesValue: (count) => `${count} places saved`,
+    factsNow: "Current facts",
+    askCommunity: "Ask anglers in chat",
   },
   es: {
     yourLocation: "Tu ubicación",
@@ -132,19 +113,10 @@ const translations: TranslationMap<{
     low: "Baja",
     biteNow: "Actividad ahora",
     aiAnalysis: "Análisis del agua con IA",
-    analyticsSummary: "Resumen analítico",
+    analyticsSummary: "Datos del agua",
     geoSummary: "Resumen geográfico",
-    greeting: (userName, temperature, pressure) =>
-      `Hola, ${userName}. Ahora hay unos ${temperature} y la presión está en ${pressure}. Estas condiciones suelen funcionar bien en cortes, bordes y zonas tranquilas cerca de la orilla.`,
-    whereToSearch: "Dónde buscar peces",
-    shallowBays: "Bahías poco profundas",
-    shallowBaysDescription: "El agua se calienta más rápido aquí y atrae alevines y peces pacíficos.",
-    dropOffs: (sunset) => `Cortes profundos (puesta: ${sunset})`,
-    dropOffsDescription: "Al caer la tarde, los grandes depredadores salen de la profundidad hacia la orilla.",
-    recommendedGear: "Equipo recomendado",
-    savedPlaces: "Lugares guardados",
-    wind: "Viento",
-    savedPlacesValue: (count) => `${count} lugares guardados`,
+    factsNow: "Datos actuales",
+    askCommunity: "Preguntar en el chat",
   },
   fr: {
     yourLocation: "Votre position",
@@ -161,19 +133,10 @@ const translations: TranslationMap<{
     low: "Faible",
     biteNow: "Activité actuelle",
     aiAnalysis: "Analyse IA du plan d'eau",
-    analyticsSummary: "Résumé analytique",
+    analyticsSummary: "Faits sur le spot",
     geoSummary: "Résumé géo",
-    greeting: (userName, temperature, pressure) =>
-      `Bonjour, ${userName}. Il fait environ ${temperature} et la pression est à ${pressure}. Ces conditions fonctionnent souvent mieux près des cassures, bordures et zones calmes du rivage.`,
-    whereToSearch: "Où chercher le poisson",
-    shallowBays: "Baies peu profondes",
-    shallowBaysDescription: "L'eau s'y réchauffe plus vite et attire les alevins et les poissons blancs.",
-    dropOffs: (sunset) => `Cassures profondes (coucher: ${sunset})`,
-    dropOffsDescription: "En soirée, les gros prédateurs quittent la profondeur vers les bordures.",
-    recommendedGear: "Matériel conseillé",
-    savedPlaces: "Spots sauvegardés",
-    wind: "Vent",
-    savedPlacesValue: (count) => `${count} spots enregistrés`,
+    factsNow: "Faits du moment",
+    askCommunity: "Demander dans le chat",
   },
   pt: {
     yourLocation: "Sua localização",
@@ -190,19 +153,10 @@ const translations: TranslationMap<{
     low: "Baixa",
     biteNow: "Atividade agora",
     aiAnalysis: "Análise da água por IA",
-    analyticsSummary: "Resumo analítico",
+    analyticsSummary: "Fatos do local",
     geoSummary: "Resumo geográfico",
-    greeting: (userName, temperature, pressure) =>
-      `Olá, ${userName}. Agora está em torno de ${temperature} e a pressão marca ${pressure}. Essas condições costumam funcionar bem em quedas, bordas e águas mais calmas perto da margem.`,
-    whereToSearch: "Onde procurar peixe",
-    shallowBays: "Baías rasas",
-    shallowBaysDescription: "A água aquece mais rápido aqui e atrai pequenos peixes e espécies pacíficas.",
-    dropOffs: (sunset) => `Quedas profundas (pôr do sol: ${sunset})`,
-    dropOffsDescription: "No fim do dia, os grandes predadores saem da profundidade para as bordas.",
-    recommendedGear: "Equipamentos recomendados",
-    savedPlaces: "Locais salvos",
-    wind: "Vento",
-    savedPlacesValue: (count) => `${count} locais salvos`,
+    factsNow: "Fatos atuais",
+    askCommunity: "Perguntar no chat",
   },
 };
 
@@ -222,6 +176,118 @@ function getBiteLevelLabel(biteIndex: number | undefined, lang: LanguageCode) {
   }
 
   return t.low;
+}
+
+function describePressure(weather: WeatherPayload, lang: LanguageCode) {
+  if (lang === "ru") {
+    if (weather.pressureMm >= 750 && weather.pressureMm <= 760) {
+      return "Давление в рабочем диапазоне, рыба чаще держится стабильнее.";
+    }
+
+    if (weather.pressureMm < 750) {
+      return "Пониженное давление. Ищи рыбу ближе к укрытиям и мягким бровкам.";
+    }
+
+    return "Давление выше среднего. Крупная рыба может быть осторожнее на мели.";
+  }
+
+  if (weather.pressureMm >= 750 && weather.pressureMm <= 760) {
+    return "Pressure is in a steady working range.";
+  }
+
+  if (weather.pressureMm < 750) {
+    return "Lower pressure suggests softer structure and cover.";
+  }
+
+  return "Higher pressure can push larger fish off the shallows.";
+}
+
+function describeWind(weather: WeatherPayload, lang: LanguageCode) {
+  if (lang === "ru") {
+    if (weather.windKmh <= 8) {
+      return "Слабый ветер. Можно аккуратно работать по окнам и кромке травы.";
+    }
+
+    if (weather.windKmh <= 18) {
+      return "Умеренный ветер. Хорошее окно для поиска активной рыбы по наветренной стороне.";
+    }
+
+    return "Сильный ветер. Лучше держаться закрытых участков и брать более тяжелую оснастку.";
+  }
+
+  if (weather.windKmh <= 8) {
+    return "Light wind works well around edges and grass lines.";
+  }
+
+  if (weather.windKmh <= 18) {
+    return "Moderate wind often wakes up fish on windward banks.";
+  }
+
+  return "Strong wind favors protected water and heavier tackle.";
+}
+
+function describeFocus(weather: WeatherPayload, lang: LanguageCode) {
+  if (lang === "ru") {
+    if (!weather.isDay) {
+      return `После заката (${weather.sunset}) проверь береговые свалы, входы в ямы и тихие карманы рядом с глубиной.`;
+    }
+
+    if (weather.temperatureC <= 10) {
+      return "Вода прохладная. Начни с глубины, русловых бровок и мест рядом с корягой.";
+    }
+
+    if (weather.windKmh >= 10 && weather.windKmh <= 18) {
+      return "Работай по наветренной стороне, косам и участкам, куда ветер сгоняет кормовую рыбу.";
+    }
+
+    return "Смотри заливы, кромку травы и спокойные окна у берега, особенно ближе к утру и вечеру.";
+  }
+
+  if (!weather.isDay) {
+    return `After sunset (${weather.sunset}), work shoreline breaks, pit entries, and calm pockets near depth.`;
+  }
+
+  if (weather.temperatureC <= 10) {
+    return "Cool water favors depth changes, channel edges, and timber nearby.";
+  }
+
+  if (weather.windKmh >= 10 && weather.windKmh <= 18) {
+    return "Check windward banks and points where bait is pushed in.";
+  }
+
+  return "Check shallows, grass edges, and calm shoreline windows, especially morning and evening.";
+}
+
+function describeTackle(weather: WeatherPayload, lang: LanguageCode) {
+  if (lang === "ru") {
+    if (weather.windKmh >= 18) {
+      return "Оснастка: джиг 16-24 г, более плотная резина, поводок покороче для контроля на ветру.";
+    }
+
+    if (weather.temperatureC <= 10) {
+      return "Оснастка: джиг 10-18 г, медленная ступенька, минноу 90-110 на паузах.";
+    }
+
+    return "Оснастка: минноу 90-110, легкий джиг, вертушка или шэд по активной рыбе у кромки.";
+  }
+
+  if (weather.windKmh >= 18) {
+    return "Tackle: 16-24 g jig, denser soft bait, shorter leader for wind control.";
+  }
+
+  if (weather.temperatureC <= 10) {
+    return "Tackle: 10-18 g jig, slow step retrieve, 90-110 mm minnows with pauses.";
+  }
+
+  return "Tackle: 90-110 mm minnows, light jig, spinner, or shad for active edge fish.";
+}
+
+function getSourceLabel(source: WeatherPayload["source"], lang: LanguageCode) {
+  if (lang === "ru") {
+    return source === "live" ? "Живые данные Open-Meteo" : "Оценка по координатам";
+  }
+
+  return source === "live" ? "Live Open-Meteo data" : "Estimated by coordinates";
 }
 
 export function HomeHero({
@@ -288,6 +354,15 @@ export function HomeHero({
     };
   }, [location, t.unavailable]);
 
+  const locationLabel = location ? location.city || location.country || t.currentPosition : t.currentPosition;
+  const fishRequestSummary = weather
+    ? lang === "ru"
+      ? `Нужна свежая информация по клеву в районе ${locationLabel}. Сейчас ${weather.temperatureC}°C, давление ${weather.pressureMm} мм, ветер ${weather.windKmh} км/ч, индекс клева ${weather.biteIndex}/100.`
+      : `Need fresh bite reports near ${locationLabel}. It is ${weather.temperatureC}°C, pressure ${weather.pressureMm} mmHg, wind ${weather.windKmh} km/h, bite index ${weather.biteIndex}/100.`
+    : lang === "ru"
+      ? `Нужна свежая информация по клеву в районе ${locationLabel}.`
+      : `Need fresh bite reports near ${locationLabel}.`;
+
   return (
     <section className="relative -mt-2 overflow-hidden rounded-[32px] bg-[#0a1520] shadow-sm">
       <div className="absolute inset-0 z-0">
@@ -351,7 +426,9 @@ export function HomeHero({
               <div className="mt-1 font-display text-[32px] font-bold leading-none tracking-tighter text-primary">
                 {getBiteLevelLabel(weather?.biteIndex, lang)}
               </div>
-              <div className="mt-2 text-[13px] font-medium text-white/50">{t.biteNow}</div>
+              <div className="mt-2 text-[13px] font-medium text-white/50">
+                {weather?.biteIndex ? `${t.biteNow} · ${weather.biteIndex}/100` : t.biteNow}
+              </div>
             </div>
           </div>
         </div>
@@ -406,55 +483,138 @@ export function HomeHero({
               </div>
 
               <div className="space-y-6 p-6 pb-12">
-                <div className="text-[17px] leading-relaxed text-white">
-                  {t.greeting(
-                    userName,
-                    weather ? `${weather.temperatureC}°C` : "--",
-                    weather ? `${weather.pressureMm} mmHg` : "--",
-                  )}
-                </div>
+                {weather ? (
+                  <>
+                    <div className="rounded-[24px] border border-primary/15 bg-primary/10 p-4">
+                      <div className="text-[13px] font-semibold uppercase tracking-[0.22em] text-primary">{t.factsNow}</div>
+                      <div className="mt-3 text-[16px] leading-7 text-white">
+                        {lang === "ru"
+                          ? `${userName}, сейчас в точке ${weather.condition.toLowerCase()}, индекс клева ${weather.biteIndex}/100, ${weather.biteLabel.toLowerCase()}. Источник: ${getSourceLabel(weather.source, lang).toLowerCase()}.`
+                          : `${userName}, current conditions are ${weather.condition.toLowerCase()}, bite index ${weather.biteIndex}/100, ${weather.biteLabel.toLowerCase()}. Source: ${getSourceLabel(weather.source, lang).toLowerCase()}.`}
+                      </div>
+                    </div>
 
-                <div className="space-y-3">
-                  <h3 className="text-[13px] font-semibold uppercase tracking-wider text-text-muted">{t.whereToSearch}</h3>
-                  <div className="grid gap-3">
-                    <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
-                      <div className="mb-1 font-bold text-white">{t.shallowBays}</div>
-                      <div className="text-[14px] leading-relaxed text-text-muted">{t.shallowBaysDescription}</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
+                          <Cloud size={14} />
+                          {lang === "ru" ? "Температура" : "Temperature"}
+                        </div>
+                        <div className="mt-2 text-lg font-semibold text-white">{weather.temperatureC}°C</div>
+                      </div>
+                      <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
+                          <Gauge size={14} />
+                          {lang === "ru" ? "Давление" : "Pressure"}
+                        </div>
+                        <div className="mt-2 text-lg font-semibold text-white">{weather.pressureMm} мм</div>
+                      </div>
+                      <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
+                          <Wind size={14} />
+                          {lang === "ru" ? "Ветер" : "Wind"}
+                        </div>
+                        <div className="mt-2 text-lg font-semibold text-white">{weather.windKmh} км/ч</div>
+                      </div>
+                      <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
+                          <Cloud size={14} />
+                          {lang === "ru" ? "Облачность" : "Cloud cover"}
+                        </div>
+                        <div className="mt-2 text-lg font-semibold text-white">{weather.cloudCover}%</div>
+                      </div>
+                      <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
+                          <MoonStar size={14} />
+                          {lang === "ru" ? "Луна" : "Moon"}
+                        </div>
+                        <div className="mt-2 text-sm font-semibold text-white">{weather.moonLabel}</div>
+                      </div>
+                      <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
+                          <SunMedium size={14} />
+                          {lang === "ru" ? "Световой день" : "Light window"}
+                        </div>
+                        <div className="mt-2 text-sm font-semibold text-white">
+                          {weather.sunrise} – {weather.sunset}
+                        </div>
+                      </div>
                     </div>
-                    <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
-                      <div className="mb-1 font-bold text-white">{t.dropOffs(weather?.sunset ?? "--")}</div>
-                      <div className="text-[14px] leading-relaxed text-text-muted">{t.dropOffsDescription}</div>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="space-y-3">
-                  <h3 className="text-[13px] font-semibold uppercase tracking-wider text-text-muted">{t.recommendedGear}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {["Jig 10-18 g", "Fluorocarbon", "Minnow 90-110", "Echo sounder"].map((item) => (
-                      <span key={item} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-[14px] font-semibold text-white">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                    <div className="space-y-3">
+                      <div className="text-[13px] font-semibold uppercase tracking-[0.22em] text-text-muted">
+                        {lang === "ru" ? "Что говорят данные" : "What the data says"}
+                      </div>
+                      <div className="grid gap-3">
+                        <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                          <div className="font-bold text-white">{lang === "ru" ? "По давлению" : "Pressure"}</div>
+                          <div className="mt-2 text-[14px] leading-relaxed text-text-muted">{describePressure(weather, lang)}</div>
+                        </div>
+                        <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4">
+                          <div className="font-bold text-white">{lang === "ru" ? "По ветру" : "Wind"}</div>
+                          <div className="mt-2 text-[14px] leading-relaxed text-text-muted">{describeWind(weather, lang)}</div>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-3 rounded-[24px] border border-white/5 bg-white/[0.03] p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
-                      <Waves size={14} />
-                      {t.savedPlaces}
+                    <div className="space-y-3">
+                      <div className="text-[13px] font-semibold uppercase tracking-[0.22em] text-text-muted">
+                        {lang === "ru" ? "Где начать" : "Where to start"}
+                      </div>
+                      <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4 text-[14px] leading-relaxed text-text-muted">
+                        {describeFocus(weather, lang)}
+                      </div>
                     </div>
-                    <div className="text-sm font-semibold text-white">{t.savedPlacesValue(savedPlacesCount)}</div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
-                      <Wind size={14} />
-                      {t.wind}
+
+                    <div className="space-y-3">
+                      <div className="text-[13px] font-semibold uppercase tracking-[0.22em] text-text-muted">
+                        {lang === "ru" ? "Оснастка под условия" : "Tackle for conditions"}
+                      </div>
+                      <div className="rounded-[20px] border border-white/5 bg-surface-soft p-4 text-[14px] leading-relaxed text-text-muted">
+                        {describeTackle(weather, lang)}
+                      </div>
                     </div>
-                    <div className="text-sm font-semibold text-white">{weather ? `${weather.windKmh} km/h` : "--"}</div>
+
+                    <div className="grid grid-cols-2 gap-3 rounded-[24px] border border-white/5 bg-white/[0.03] p-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
+                          <MapPin size={14} />
+                          {lang === "ru" ? "Сохраненные точки" : "Saved places"}
+                        </div>
+                        <div className="text-sm font-semibold text-white">
+                          {lang === "ru" ? `${savedPlacesCount} в профиле` : `${savedPlacesCount} saved`}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
+                          <Sparkles size={14} />
+                          {lang === "ru" ? "Источник" : "Source"}
+                        </div>
+                        <div className="text-sm font-semibold text-white">{getSourceLabel(weather.source, lang)}</div>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={{
+                        pathname: "/chats",
+                        query: {
+                          compose: "fish-request",
+                          location: locationLabel,
+                          summary: fishRequestSummary,
+                        },
+                      }}
+                      onClick={() => setAiOpen(false)}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] border border-primary/20 bg-primary px-4 py-4 text-[15px] font-bold text-[#0a1520] shadow-[0_10px_28px_rgba(103,232,178,0.24)] transition hover:bg-primary/90"
+                    >
+                      <MessageSquareQuote size={18} />
+                      {t.askCommunity}
+                    </Link>
+                  </>
+                ) : (
+                  <div className="rounded-[24px] border border-dashed border-border-subtle bg-surface-soft p-5 text-sm text-text-muted">
+                    {weatherError || t.unavailable}
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </Drawer.Content>

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -209,7 +210,10 @@ export default async function FeedPage() {
           )}
         </div>
       ) : (
-        <div className="glass-panel flex flex-col items-center gap-4 rounded-[30px] border border-border-subtle p-6 text-center">
+        <div
+          className="glass-panel panel-scene flex flex-col items-center gap-4 rounded-[30px] border border-border-subtle p-6 text-center"
+          style={{ "--panel-scene-image": `url('${withBasePath("/graphics/empty-catches-lure.png")}')` } as CSSProperties}
+        >
           <Image
             src={withBasePath("/graphics/empty-catches-lure.png")}
             alt={t.emptyAlt}
