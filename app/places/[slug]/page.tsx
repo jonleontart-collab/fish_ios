@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, ImagePlus, MapPin, Star, Waves } from "lucide-react";
 import { CatchCard } from "@/components/CatchCard";
 import { PlacePhotoUploader } from "@/components/PlacePhotoUploader";
+import { withBasePath } from "@/lib/app-paths";
 import { getSpeciesBadge } from "@/lib/assets";
 import { placeSourceLabel, placeTypeLabel } from "@/lib/format";
 import { getPlaceDetails } from "@/lib/queries";
@@ -33,7 +34,7 @@ export default async function PlacePage({
         <div className="relative aspect-[1.2] bg-[linear-gradient(135deg,#0b1520,#17324a)]">
           {place.displayImage ? (
             <Image
-              src={place.displayImage}
+              src={withBasePath(place.displayImage)}
               alt={place.name}
               fill
               className="object-cover"
@@ -113,7 +114,7 @@ export default async function PlacePage({
                   className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
                 >
                   <Image
-                    src={getSpeciesBadge(item)}
+                    src={withBasePath(getSpeciesBadge(item))}
                     alt={item}
                     width={20}
                     height={20}
@@ -163,7 +164,7 @@ export default async function PlacePage({
               <div key={photo.id} className="overflow-hidden rounded-[22px] border border-border-subtle bg-white/4">
                 <div className="relative aspect-[1.05]">
                   <Image
-                    src={photo.imagePath}
+                    src={withBasePath(photo.imagePath)}
                     alt={photo.caption ?? place.name}
                     fill
                     className="object-cover"

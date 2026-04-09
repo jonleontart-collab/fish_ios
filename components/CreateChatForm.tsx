@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, MessagesSquare, Plus, X } from "lucide-react";
 import { Drawer } from "vaul";
+import { apiPath } from "@/lib/app-paths";
 
 export function CreateChatForm() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export function CreateChatForm() {
     setError("");
 
     try {
-      const response = await fetch("/api/chats", {
+      const response = await fetch(apiPath("/api/chats"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

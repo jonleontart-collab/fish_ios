@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Upload } from "lucide-react";
+import { apiPath, withBasePath } from "@/lib/app-paths";
 
 type ProfileEditorProps = {
   user: {
@@ -76,7 +77,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
         payload.append("banner", form.banner);
       }
 
-      const response = await fetch("/api/users/me", {
+      const response = await fetch(apiPath("/api/users/me"), {
         method: "PATCH",
         body: payload,
       });
@@ -103,7 +104,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
       <label className="relative mb-6 block overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.06)] bg-[linear-gradient(135deg,#0b1520,#17324a)] cursor-pointer group">
         {(bannerPreview || user.bannerPath) ? (
           <Image
-            src={bannerPreview || user.bannerPath || ""}
+            src={withBasePath(bannerPreview || user.bannerPath || "")}
             alt="Баннер профиля"
             width={800}
             height={300}
@@ -130,7 +131,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
         <label className="relative cursor-pointer group rounded-full">
           {(avatarPreview || user.avatarPath) ? (
             <Image
-              src={avatarPreview || user.avatarPath || ""}
+              src={withBasePath(avatarPreview || user.avatarPath || "")}
               alt={user.name}
               width={76}
               height={76}

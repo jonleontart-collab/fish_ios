@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CalendarDays, Compass, Plus } from "lucide-react";
 import { CatchCard } from "@/components/CatchCard";
 import { HomeHero } from "@/components/HomeHero";
+import { withBasePath } from "@/lib/app-paths";
 import { formatDateTime } from "@/lib/format";
 import { getDashboardData } from "@/lib/queries";
 
@@ -20,7 +21,7 @@ export default async function Home() {
          <Link href="/profile" className="shrink-0 group">
            {dashboard.user.avatarPath ? (
              <Image
-               src={dashboard.user.avatarPath}
+               src={withBasePath(dashboard.user.avatarPath)}
                alt={dashboard.user.name}
                width={44}
                height={44}

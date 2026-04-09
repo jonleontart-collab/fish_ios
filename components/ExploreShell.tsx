@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Download, MapPin, Search, Plus, Map as MapIcon, List as ListIcon, Maximize, Minimize, Navigation2, Star, ImagePlus, Loader2, Check, Sparkles, X } from "lucide-react";
 import { Drawer } from "vaul";
 import { useLocation } from "@/components/LocationProvider";
+import { apiPath, withBasePath } from "@/lib/app-paths";
 import { getSpeciesBadge } from "@/lib/assets";
 import { placeTypeLabel } from "@/lib/format";
 
@@ -47,7 +48,7 @@ function SafeImage({ src, alt, className }: { src: string; alt: string; classNam
       </div>
     );
   }
-  return <img src={src} alt={alt} className={`object-cover w-full h-full ${className}`} onError={() => setError(true)} />;
+  return <img src={withBasePath(src)} alt={alt} className={`object-cover w-full h-full ${className}`} onError={() => setError(true)} />;
 }
 
 async function requestNearbyPlaces(location: {
@@ -59,7 +60,7 @@ async function requestNearbyPlaces(location: {
   source: string;
   resolvedAt: string;
 }) {
-  const response = await fetch("/api/places/discover", {
+  const response = await fetch(apiPath("/api/places/discover"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(location),
@@ -235,7 +236,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
                         <div className="flex items-center mt-3 -space-x-2">
                           {place.fishSpeciesList.slice(0, 5).map(fish => (
                             <div key={fish} className="h-7 w-7 rounded-full border-2 border-[#121212] bg-surface shadow-2xl overflow-hidden relative">
-                               <Image src={getSpeciesBadge(fish)} alt={fish} fill className="object-cover" />
+                               <Image src={withBasePath(getSpeciesBadge(fish))} alt={fish} fill className="object-cover" />
                             </div>
                           ))}
                           <span className="text-[12px] font-bold text-white/80 pl-4 drop-shadow">
@@ -363,7 +364,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
           <Drawer.Overlay className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-md" />
           <Drawer.Content 
             className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto mt-24 flex max-h-[90vh] max-w-md flex-col rounded-t-[36px] bg-[#0c1218] border-t border-white/10 outline-none overflow-hidden"
-            style={{ backgroundImage: "url('/images/modal-bg.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+            style={{ backgroundImage: `url('${withBasePath("/images/modal-bg.png")}')`, backgroundSize: 'cover', backgroundPosition: 'center' }}
           >
             <div className="absolute inset-0 bg-black/50 mix-blend-multiply z-0 pointer-events-none" />
             <div className="flex-1 overflow-y-auto hide-scrollbar relative z-10">

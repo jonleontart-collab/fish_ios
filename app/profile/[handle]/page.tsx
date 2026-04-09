@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, UserPlus, MapPin, Fish } from "lucide-react";
+import { withBasePath } from "@/lib/app-paths";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +49,7 @@ export default async function PublicProfilePage({
         {/* Banner */}
         <div className="h-48 w-full bg-[linear-gradient(135deg,#0b1520,#17324a)] sm:rounded-t-[34px] overflow-hidden">
            {user.bannerPath ? (
-              <img src={user.bannerPath} alt="" className="object-cover w-full h-full" />
+              <img src={withBasePath(user.bannerPath)} alt="" className="object-cover w-full h-full" />
            ) : (
               <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(103,232,178,0.3),transparent_60%),linear-gradient(180deg,transparent,#000000_90%)]" />
            )}
@@ -58,7 +59,7 @@ export default async function PublicProfilePage({
         {/* Profile Info */}
         <div className="px-5 -mt-12 relative z-10 text-center">
             {user.avatarPath ? (
-               <img src={user.avatarPath} alt={user.name} className="h-24 w-24 rounded-full border-4 border-background bg-surface object-cover mx-auto shadow-2xl" />
+               <img src={withBasePath(user.avatarPath)} alt={user.name} className="h-24 w-24 rounded-full border-4 border-background bg-surface object-cover mx-auto shadow-2xl" />
             ) : (
                <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-background bg-gradient-to-br ${user.avatarGradient} text-3xl font-bold text-slate-950 shadow-2xl`}>
                  {user.name.slice(0, 1)}
@@ -131,7 +132,7 @@ export default async function PublicProfilePage({
             <div className="grid grid-cols-3 gap-2">
                {user.catches.map((catchItem) => (
                   <div key={catchItem.id} className="aspect-square relative rounded-[16px] overflow-hidden bg-surface group border border-white/5 shadow-lg">
-                     <img src={catchItem.imagePath} alt="" className="object-cover w-full h-full group-hover:scale-110 transition-transform" />
+                     <img src={withBasePath(catchItem.imagePath)} alt="" className="object-cover w-full h-full group-hover:scale-110 transition-transform" />
                   </div>
                ))}
             </div>

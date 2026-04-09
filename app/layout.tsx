@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { LocationProvider } from "@/components/LocationProvider";
 import TabBar from "@/components/TabBar";
 import Onboarding from "@/components/Onboarding";
+import { withBasePath } from "@/lib/app-paths";
 import { getCurrentUser } from "@/lib/queries";
 import "./globals.css";
 
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     template: "%s · FishFlow",
   },
   description: "Рыболовная соцсеть с лентой, картой мест, поездками, чатами и AI-поиском точек рядом.",
-  manifest: "/manifest.json",
+  manifest: withBasePath("/manifest.json"),
 };
 
 export const viewport: Viewport = {
@@ -61,7 +62,7 @@ export default async function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
+                  navigator.serviceWorker.register('${withBasePath("/sw.js")}');
                 });
               }
             `,

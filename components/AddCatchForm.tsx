@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Bot, CheckCircle2, Loader2, TriangleAlert, UploadCloud } from "lucide-react";
+import { apiPath } from "@/lib/app-paths";
 
 type PlaceOption = {
   id: string;
@@ -74,7 +75,7 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
       const data = new FormData();
       data.append("image", file);
 
-      const response = await fetch("/api/recognize", {
+      const response = await fetch(apiPath("/api/recognize"), {
         method: "POST",
         body: data,
       });
@@ -132,7 +133,7 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
       payload.append("recognizedLengthCm", recognition?.lengthCm ? String(recognition.lengthCm) : "");
       payload.append("aiConfidence", recognition ? String(recognition.confidence) : "");
 
-      const response = await fetch("/api/catches", {
+      const response = await fetch(apiPath("/api/catches"), {
         method: "POST",
         body: payload,
       });

@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Trash2,
 } from "lucide-react";
+import { apiPath } from "@/lib/app-paths";
 import { formatDateTime, shoppingStatusLabel, tripStatusLabel } from "@/lib/format";
 
 type PlaceOption = {
@@ -107,7 +108,7 @@ function TripEditorCard({ trip }: { trip: TripItem }) {
         payload.append("reportImage", form.reportImage);
       }
 
-      const response = await fetch(`/api/trips/${trip.id}`, {
+      const response = await fetch(apiPath(`/api/trips/${trip.id}`), {
         method: "PATCH",
         body: payload,
       });
@@ -266,7 +267,7 @@ export function TripPlanner({
     setError("");
 
     try {
-      const response = await fetch("/api/trips", {
+      const response = await fetch(apiPath("/api/trips"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -304,7 +305,7 @@ export function TripPlanner({
     setShoppingError("");
 
     try {
-      const response = await fetch("/api/shopping-items", {
+      const response = await fetch(apiPath("/api/shopping-items"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -337,7 +338,7 @@ export function TripPlanner({
   }
 
   async function handleToggleShoppingStatus(itemId: string, status: "PLANNED" | "BOUGHT") {
-    const response = await fetch(`/api/shopping-items/${itemId}`, {
+    const response = await fetch(apiPath(`/api/shopping-items/${itemId}`), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -358,7 +359,7 @@ export function TripPlanner({
   }
 
   async function handleDeleteShoppingItem(itemId: string) {
-    const response = await fetch(`/api/shopping-items/${itemId}`, {
+    const response = await fetch(apiPath(`/api/shopping-items/${itemId}`), {
       method: "DELETE",
     });
 

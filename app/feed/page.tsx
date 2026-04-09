@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CatchCard } from "@/components/CatchCard";
 import { TripReportCard } from "@/components/TripReportCard";
+import { withBasePath } from "@/lib/app-paths";
 import { getFeedPageData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +55,7 @@ export default async function FeedPage() {
       ) : (
         <div className="glass-panel flex flex-col items-center gap-4 rounded-[30px] border border-border-subtle p-6 text-center">
           <Image
-            src="/graphics/empty-catches-lure.png"
+            src={withBasePath("/graphics/empty-catches-lure.png")}
             alt="Пока нет публикаций"
             width={220}
             height={220}

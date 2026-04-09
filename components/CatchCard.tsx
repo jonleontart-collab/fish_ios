@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Trophy, MoreHorizontal, ImagePlus } from "lucide-react";
 import { CatchEngagementBar } from "@/components/CatchEngagementBar";
+import { withBasePath } from "@/lib/app-paths";
 import { formatFeedDate, formatLength, formatWeight } from "@/lib/format";
 
 type CatchCardProps = {
@@ -52,7 +53,7 @@ function CatchImage({ src, alt, species }: { src: string; alt: string; species: 
 
   return (
     <img
-      src={src}
+      src={withBasePath(src)}
       alt={alt}
       className="object-cover w-full h-full"
       onError={() => setError(true)}
@@ -71,7 +72,7 @@ export function CatchCard({ catchItem, showUser = true, showActions = true }: Ca
             <Link href={`/profile/${catchItem.user.handle}`} className="shrink-0 rounded-full overflow-hidden border border-white/10 relative group">
               {catchItem.user.avatarPath ? (
                 <img
-                  src={catchItem.user.avatarPath}
+                  src={withBasePath(catchItem.user.avatarPath)}
                   alt={catchItem.user.name}
                   className="h-10 w-10 object-cover group-hover:scale-105 transition-transform"
                 />

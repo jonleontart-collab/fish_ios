@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, MessageCircle, Send } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { apiPath, withBasePath } from "@/lib/app-paths";
 
 type CommentItem = {
   id: string;
@@ -36,7 +37,7 @@ export function CatchComments({
     setError("");
 
     try {
-      const response = await fetch(`/api/catches/${catchId}/comments`, {
+      const response = await fetch(apiPath(`/api/catches/${catchId}/comments`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body: body.trim() }),
@@ -68,7 +69,7 @@ export function CatchComments({
             <div key={comment.id} className="px-5 py-4 flex gap-3 hover:bg-white/[0.02] transition-colors">
               <Link href={`/profile/${comment.user.handle}`} className="shrink-0 w-10 h-10 rounded-full overflow-hidden bg-surface-strong border border-white/10 flex items-center justify-center text-white font-bold text-sm">
                 {comment.user.avatarPath ? (
-                  <Image src={comment.user.avatarPath} alt={comment.user.name} width={40} height={40} className="object-cover w-full h-full" />
+                  <Image src={withBasePath(comment.user.avatarPath)} alt={comment.user.name} width={40} height={40} className="object-cover w-full h-full" />
                 ) : (
                   <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${comment.user.avatarGradient}`}>
                     {comment.user.name.charAt(0).toUpperCase()}

@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Backpack, Camera, Loader2, Plus, Trash2, X } from "lucide-react";
+import { apiPath, withBasePath } from "@/lib/app-paths";
 
 type InventoryItem = {
   id: string;
@@ -79,7 +80,7 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
         formData.append("image", form.image);
       }
 
-      const response = await fetch("/api/users/me/inventory", {
+      const response = await fetch(apiPath("/api/users/me/inventory"), {
         method: "POST",
         body: formData,
       });
@@ -116,7 +117,7 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
   async function handleDelete(itemId: string) {
     setError("");
 
-    const response = await fetch(`/api/users/me/inventory/${itemId}`, {
+    const response = await fetch(apiPath(`/api/users/me/inventory/${itemId}`), {
       method: "DELETE",
     });
 
@@ -169,7 +170,7 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
             className="group relative flex h-[58px] w-[58px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-[16px] border border-dashed border-border-subtle bg-surface-soft text-text-muted hover:border-primary/50 hover:bg-white/10 hover:text-text-main transition-all"
           >
             {form.preview ? (
-               <Image src={form.preview} alt="Preview" fill className="object-cover" />
+               <Image src={withBasePath(form.preview)} alt="Preview" fill className="object-cover" />
             ) : (
                <Camera size={20} className="mb-0.5 group-hover:scale-110 transition-transform" />
             )}
@@ -224,7 +225,7 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
               <div className="flex gap-4">
                  {item.imagePath ? (
                     <div className="h-14 w-14 shrink-0 rounded-[12px] bg-surface overflow-hidden relative">
-                       <Image src={item.imagePath} alt={item.name} fill className="object-cover" />
+                       <Image src={withBasePath(item.imagePath)} alt={item.name} fill className="object-cover" />
                     </div>
                  ) : (
                     <div className="h-14 w-14 shrink-0 rounded-[12px] bg-black/20 flex flex-col items-center justify-center border border-white/5">

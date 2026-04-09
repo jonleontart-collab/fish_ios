@@ -12,6 +12,7 @@ import { CatchCard } from "@/components/CatchCard";
 import { InventoryManager } from "@/components/InventoryManager";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { TripReportCard } from "@/components/TripReportCard";
+import { withBasePath } from "@/lib/app-paths";
 import { shoppingStatusLabel } from "@/lib/format";
 import { getProfilePageData } from "@/lib/queries";
 
@@ -31,7 +32,7 @@ export default async function ProfilePage() {
         {/* Banner */}
         <div className="h-48 w-full bg-[linear-gradient(135deg,#0b1520,#17324a)] sm:rounded-t-[34px] overflow-hidden rounded-b-[24px]">
            {profile.user.bannerPath ? (
-              <img src={profile.user.bannerPath} alt="" className="object-cover w-full h-full" />
+              <img src={withBasePath(profile.user.bannerPath)} alt="" className="object-cover w-full h-full" />
            ) : (
               <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(103,232,178,0.3),transparent_60%),linear-gradient(180deg,transparent,#000000_90%)]" />
            )}
@@ -41,7 +42,7 @@ export default async function ProfilePage() {
         {/* Profile Info */}
         <div className="px-5 -mt-12 relative z-10 text-center">
             {profile.user.avatarPath ? (
-               <img src={profile.user.avatarPath} alt={profile.user.name} className="h-28 w-28 rounded-full border-4 border-background bg-surface object-cover mx-auto shadow-2xl" />
+               <img src={withBasePath(profile.user.avatarPath)} alt={profile.user.name} className="h-28 w-28 rounded-full border-4 border-background bg-surface object-cover mx-auto shadow-2xl" />
             ) : (
                <div className={`mx-auto flex h-28 w-28 items-center justify-center rounded-full border-4 border-background bg-gradient-to-br ${profile.user.avatarGradient} text-3xl font-bold text-slate-950 shadow-2xl`}>
                  {profile.user.name.slice(0, 1)}
@@ -79,7 +80,7 @@ export default async function ProfilePage() {
                      {profile.friends.length > 0 && (
                         <div className="flex -space-x-2">
                            {profile.friends.slice(0, 2).map((f, i) => (
-                              <img key={i} src={f.avatarPath || ""} alt="" className="w-6 h-6 rounded-full border border-background bg-zinc-800 object-cover" />
+                              <img key={i} src={withBasePath(f.avatarPath || "")} alt="" className="w-6 h-6 rounded-full border border-background bg-zinc-800 object-cover" />
                            ))}
                         </div>
                      )}

@@ -8,6 +8,7 @@ import {
   useContext,
   useState,
 } from "react";
+import { apiPath } from "@/lib/app-paths";
 import { LOCATION_STORAGE_KEY, parseStoredLocation, type ViewerLocation } from "@/lib/location";
 
 type LocationContextValue = {
@@ -38,7 +39,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   const resolveFromIp = useEffectEvent(async () => {
     try {
-      const response = await fetch("/api/location/resolve", {
+      const response = await fetch(apiPath("/api/location/resolve"), {
         cache: "no-store",
       });
 
