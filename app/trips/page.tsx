@@ -53,7 +53,6 @@ export default async function TripsPage() {
       </Link>
 
       <header className="space-y-2">
-        <p className="text-sm text-text-muted">{t.section}</p>
         <h1 className="font-display text-[30px] font-semibold tracking-tight text-text-main">{t.title}</h1>
       </header>
 

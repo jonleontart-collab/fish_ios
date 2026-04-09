@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -35,6 +35,8 @@ const translations: TranslationMap<{
   interfaceLanguage: string;
   bannerAlt: string;
   updateBanner: string;
+  updatePhoto: string;
+  photoHint: string;
   name: string;
   city: string;
   experienceYears: string;
@@ -56,6 +58,8 @@ const translations: TranslationMap<{
     interfaceLanguage: "Язык интерфейса",
     bannerAlt: "Баннер профиля",
     updateBanner: "Обновить баннер",
+    updatePhoto: "Обновить фото",
+    photoHint: "Новое фото сразу покажется в профиле и чатах.",
     name: "Имя",
     city: "Город",
     experienceYears: "Стаж, лет",
@@ -77,6 +81,8 @@ const translations: TranslationMap<{
     interfaceLanguage: "Interface language",
     bannerAlt: "Profile banner",
     updateBanner: "Update banner",
+    updatePhoto: "Update photo",
+    photoHint: "The new photo will be used in the profile and chats right away.",
     name: "Name",
     city: "City",
     experienceYears: "Experience, years",
@@ -98,6 +104,8 @@ const translations: TranslationMap<{
     interfaceLanguage: "Idioma de la interfaz",
     bannerAlt: "Banner del perfil",
     updateBanner: "Actualizar banner",
+    updatePhoto: "Actualizar foto",
+    photoHint: "La nueva foto se mostrará enseguida en el perfil y en los chats.",
     name: "Nombre",
     city: "Ciudad",
     experienceYears: "Experiencia, años",
@@ -119,6 +127,8 @@ const translations: TranslationMap<{
     interfaceLanguage: "Langue de l'interface",
     bannerAlt: "Bannière du profil",
     updateBanner: "Mettre à jour la bannière",
+    updatePhoto: "Mettre à jour la photo",
+    photoHint: "La nouvelle photo sera visible tout de suite dans le profil et les chats.",
     name: "Nom",
     city: "Ville",
     experienceYears: "Expérience, années",
@@ -140,6 +150,8 @@ const translations: TranslationMap<{
     interfaceLanguage: "Idioma da interface",
     bannerAlt: "Banner do perfil",
     updateBanner: "Atualizar banner",
+    updatePhoto: "Atualizar foto",
+    photoHint: "A nova foto aparece imediatamente no perfil e nos chats.",
     name: "Nome",
     city: "Cidade",
     experienceYears: "Experiência, anos",
@@ -298,7 +310,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
 
             <div className="mb-4 px-2 text-sm font-semibold text-text-muted">{t.appearance}</div>
 
-            <label className="group relative mb-6 block cursor-pointer overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.06)] bg-[linear-gradient(135deg,#0b1520,#17324a)]">
+            <label className="group relative mb-4 block cursor-pointer overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.06)] bg-[linear-gradient(135deg,#0b1520,#17324a)]">
               {bannerPreview || user.bannerPath ? (
                 <Image
                   src={bannerPreview || withBasePath(user.bannerPath || "")}
@@ -329,44 +341,55 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
               />
             </label>
 
-            <div className="mb-6 flex items-center gap-4">
-              <label className="group relative cursor-pointer rounded-full">
-                {avatarPreview || user.avatarPath ? (
-                  <Image
-                    src={avatarPreview || withBasePath(user.avatarPath || "")}
-                    alt={user.name}
-                    width={76}
-                    height={76}
-                    className="h-[76px] w-[76px] rounded-full border-2 border-surface-strong object-cover shadow-lg"
-                    unoptimized={Boolean(avatarPreview)}
-                  />
-                ) : (
-                  <div className="flex h-[76px] w-[76px] flex-col items-center justify-center rounded-full border-2 border-dashed border-white/10 bg-black/20 text-center text-[11px] font-semibold text-text-muted shadow-lg">
-                    <ImagePlus size={18} className="mb-1 text-primary" />
-                    {t.noPhoto}
+            <div className="mb-6 rounded-[24px] border border-white/8 bg-black/20 p-4 backdrop-blur">
+              <div className="flex items-center gap-4">
+                <label className="group relative cursor-pointer rounded-full">
+                  {avatarPreview || user.avatarPath ? (
+                    <Image
+                      src={avatarPreview || withBasePath(user.avatarPath || "")}
+                      alt={user.name}
+                      width={88}
+                      height={88}
+                      className="h-[88px] w-[88px] rounded-full border-2 border-surface-strong object-cover shadow-lg"
+                      unoptimized={Boolean(avatarPreview)}
+                    />
+                  ) : (
+                    <div className="flex h-[88px] w-[88px] flex-col items-center justify-center rounded-full border-2 border-dashed border-white/10 bg-black/20 text-center text-[11px] font-semibold text-text-muted shadow-lg">
+                      <ImagePlus size={18} className="mb-1 text-primary" />
+                      {t.noPhoto}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Upload size={18} className="text-white" />
                   </div>
-                )}
-                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Upload size={18} className="text-white" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) => setForm((current) => ({ ...current, avatar: event.target.files?.[0] ?? null }))}
+                  />
+                </label>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xl font-bold tracking-tight text-text-main">{form.name || user.name}</div>
+                  <div className="text-[15px] font-medium text-primary">@{user.handle}</div>
+                  <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/12">
+                    <Upload size={15} className="text-primary" />
+                    <span>{t.updatePhoto}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => setForm((current) => ({ ...current, avatar: event.target.files?.[0] ?? null }))}
+                    />
+                  </label>
+                  <div className="mt-2 text-xs leading-5 text-text-muted">{t.photoHint}</div>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(event) => setForm((current) => ({ ...current, avatar: event.target.files?.[0] ?? null }))}
-                />
-              </label>
-              <div>
-                <div className="text-xl font-bold tracking-tight text-text-main">{user.name}</div>
-                <div className="text-[15px] font-medium text-primary">@{user.handle}</div>
               </div>
             </div>
 
             <div className="grid gap-4">
               <div className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
-                  {t.interfaceLanguage}
-                </div>
+                <div className="mb-2 text-sm text-text-muted">{t.interfaceLanguage}</div>
                 <select
                   value={form.preferredLanguage}
                   onChange={(event) => setForm((current) => ({ ...current, preferredLanguage: event.target.value }))}

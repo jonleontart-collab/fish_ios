@@ -1,7 +1,9 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { CalendarDays, ChevronRight, MapPin } from "lucide-react";
 
 import { SectionHeader } from "@/components/SectionHeader";
+import { withBasePath } from "@/lib/app-paths";
 import { formatDateTime, tripStatusLabel } from "@/lib/format";
 import { type LanguageCode, type TranslationMap } from "@/lib/i18n";
 
@@ -62,11 +64,14 @@ export function HomeTripsWidget({
   trips: UpcomingTrip[];
 }) {
   const t = translations[lang];
+  const sceneStyle = {
+    "--panel-scene-image": `url('${withBasePath("/graphics/place-river-backwater.png")}')`,
+  } as CSSProperties;
 
   return (
-    <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
+    <section className="glass-panel panel-scene rounded-[30px] border border-border-subtle p-4" style={sceneStyle}>
       <SectionHeader
-        eyebrow={t.section}
+        title={t.section}
         action={
           <Link
             href="/trips"

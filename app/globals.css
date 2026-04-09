@@ -93,6 +93,32 @@ img {
   backdrop-filter: blur(20px);
 }
 
+.panel-scene {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background-image:
+    linear-gradient(180deg, rgba(7, 17, 28, 0.82), rgba(7, 17, 28, 0.96)),
+    var(--panel-scene-image, none);
+  background-size: cover;
+  background-position: center;
+}
+
+.panel-scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(103, 232, 178, 0.12), transparent 36%),
+    radial-gradient(circle at bottom left, rgba(94, 156, 255, 0.12), transparent 34%);
+  pointer-events: none;
+}
+
+.panel-scene > * {
+  position: relative;
+  z-index: 1;
+}
+
 .bento-card {
   background: var(--surface-strong);
   border: 1px solid rgba(255, 255, 255, 0.02);

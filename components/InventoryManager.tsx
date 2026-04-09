@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from "react";
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -102,6 +103,9 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
   const router = useRouter();
   const { lang } = useLanguage();
   const t = translations[lang];
+  const sceneStyle = {
+    "--panel-scene-image": `url('${withBasePath("/modal-backgrounds/profile-panel-bg.png")}')`,
+  } as CSSProperties;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<{
     name: string;
@@ -222,8 +226,8 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
   }
 
   return (
-    <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-      <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-text-main">
+    <section className="glass-panel panel-scene rounded-[30px] border border-border-subtle p-4" style={sceneStyle}>
+      <div className="mb-4 flex items-center gap-2 text-base font-semibold text-text-main">
         <Backpack size={16} className="text-primary" />
         {t.title}
       </div>
@@ -254,17 +258,28 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
           />
         </div>
         <div className="flex items-start gap-4">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="group relative flex h-[58px] w-[58px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-[16px] border border-dashed border-border-subtle bg-surface-soft text-text-muted transition-all hover:border-primary/50 hover:bg-white/10 hover:text-text-main"
-          >
+          <div className="relative h-[58px] w-[58px] shrink-0">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="group relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[16px] border border-dashed border-border-subtle bg-surface-soft text-text-muted transition-all hover:border-primary/50 hover:bg-white/10 hover:text-text-main"
+            >
+              {form.preview ? (
+                <Image src={form.preview} alt="Preview" fill className="object-cover" unoptimized />
+              ) : (
+                <Camera size={20} className="mb-0.5 transition-transform group-hover:scale-110" />
+              )}
+            </button>
             {form.preview ? (
-              <Image src={form.preview} alt="Preview" fill className="object-cover" unoptimized />
-            ) : (
-              <Camera size={20} className="mb-0.5 transition-transform group-hover:scale-110" />
-            )}
-          </button>
+              <button
+                type="button"
+                onClick={handleClearImage}
+                className="absolute -right-1 -top-1 z-10 rounded-full bg-black/60 p-1 text-white hover:bg-danger/80"
+              >
+                <X size={14} />
+              </button>
+            ) : null}
+          </div>
           <input
             type="file"
             accept="image/*"
@@ -272,16 +287,6 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
             ref={fileInputRef}
             onChange={handleFileChange}
           />
-
-          {form.preview ? (
-            <button
-              type="button"
-              onClick={handleClearImage}
-              className="absolute left-6 top-6 z-10 rounded-full bg-black/60 p-1 text-white hover:bg-danger/80"
-            >
-              <X size={14} />
-            </button>
-          ) : null}
 
           <textarea
             value={form.notes}

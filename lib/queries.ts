@@ -199,6 +199,7 @@ export async function getDashboardData() {
     recentCatchesRaw,
     nearbyPlaces,
     activeChats,
+    friends,
     pendingShopping,
     pendingShoppingCount,
     upcomingTripsCount,
@@ -295,6 +296,7 @@ export async function getDashboardData() {
       take: 4,
     }),
     getJoinedChats(user.id, 3),
+    getFriendsForUser(user.id),
     prisma.shoppingItem.findMany({
       where: {
         userId: user.id,
@@ -358,6 +360,7 @@ export async function getDashboardData() {
     recentCatches: recentCatchesRaw.map((item) => mapCatchMedia(mapCatchWithEngagement(item))),
     nearbyPlaces: nearbyPlaces.map((place) => mapPlaceLists(withDisplayImage(place))),
     activeChats,
+    friends,
     pendingShopping,
     stats: {
       weeklyCatches,

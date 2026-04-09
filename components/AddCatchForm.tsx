@@ -1,5 +1,6 @@
-'use client';
+"use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -13,8 +14,9 @@ import {
   X,
 } from "lucide-react";
 
+import { PlaceSelectorField } from "@/components/PlaceSelectorField";
 import { useLanguage } from "@/components/LanguageProvider";
-import { apiPath } from "@/lib/app-paths";
+import { apiPath, withBasePath } from "@/lib/app-paths";
 import { MAX_CATCH_MEDIA_ITEMS } from "@/lib/constants";
 import type { TranslationMap } from "@/lib/i18n";
 
@@ -48,7 +50,6 @@ const translations: TranslationMap<{
   assistant: string;
   manualSpecies: string;
   species: string;
-  place: string;
   length: string;
   weight: string;
   bait: string;
@@ -65,17 +66,16 @@ const translations: TranslationMap<{
 }> = {
   ru: {
     section: "Добавить улов",
-    title: "Фото, видео, размеры и короткая история сессии",
+    title: "Фото, видео, размеры и короткая история выезда",
     pickPhoto: "Добавь фото или видео улова",
-    pickPhotoDescription: "Можно загрузить до 10 файлов. Первая картинка пойдет на обложку поста.",
+    pickPhotoDescription: "Можно загрузить до 10 файлов. Первая картинка станет обложкой поста.",
     addMore: "Добавить еще",
     mediaLimit: "До 10 файлов в одном посте",
     analyze: "Определить вид и размер",
     analyzing: "ИИ анализирует фото",
     assistant: "ИИ-помощник",
-    manualSpecies: "Нужно уточнить вид вручную",
+    manualSpecies: "Уточни вид вручную",
     species: "Вид рыбы",
-    place: "Место",
     length: "Длина, см",
     weight: "Вес, кг",
     bait: "Приманка или оснастка",
@@ -102,7 +102,6 @@ const translations: TranslationMap<{
     assistant: "AI assistant",
     manualSpecies: "Specify the species manually",
     species: "Fish species",
-    place: "Place",
     length: "Length, cm",
     weight: "Weight, kg",
     bait: "Bait or rig",
@@ -118,7 +117,7 @@ const translations: TranslationMap<{
     recognitionNoImage: "AI recognition needs at least one photo. You can still keep video in the post.",
   },
   es: {
-    section: "Añadir captura",
+    section: "Agregar captura",
     title: "Fotos, video, medidas y una historia rápida de la salida",
     pickPhoto: "Añade fotos o video de la captura",
     pickPhotoDescription: "Puedes subir hasta 10 archivos. La primera imagen será la portada del post.",
@@ -129,7 +128,6 @@ const translations: TranslationMap<{
     assistant: "Asistente IA",
     manualSpecies: "Debes indicar la especie manualmente",
     species: "Especie",
-    place: "Lugar",
     length: "Longitud, cm",
     weight: "Peso, kg",
     bait: "Cebo o montaje",
@@ -148,15 +146,14 @@ const translations: TranslationMap<{
     section: "Ajouter une prise",
     title: "Photos, vidéo, mesures et résumé rapide de la session",
     pickPhoto: "Ajouter des photos ou une vidéo",
-    pickPhotoDescription: "Vous pouvez téléverser jusqu’à 10 fichiers. La première image devient la couverture du post.",
+    pickPhotoDescription: "Vous pouvez téléverser jusqu'à 10 fichiers. La première image devient la couverture du post.",
     addMore: "Ajouter plus",
-    mediaLimit: "Jusqu’à 10 fichiers dans un post",
+    mediaLimit: "Jusqu'à 10 fichiers dans un post",
     analyze: "Détecter l'espèce et la taille",
     analyzing: "L'IA analyse la photo",
     assistant: "Assistant IA",
     manualSpecies: "L'espèce doit être précisée manuellement",
     species: "Espèce",
-    place: "Lieu",
     length: "Longueur, cm",
     weight: "Poids, kg",
     bait: "Appât ou montage",
@@ -169,7 +166,7 @@ const translations: TranslationMap<{
     mediaMissing: "Vous devez envoyer au moins une photo ou une vidéo.",
     aiError: "Impossible d'obtenir une réponse de l'IA. Remplissez les champs manuellement et continuez.",
     publishError: "La publication a échoué. Vérifiez les champs et réessayez.",
-    recognitionNoImage: "L’analyse a besoin d’au moins une photo. La vidéo peut rester dans le post.",
+    recognitionNoImage: "L'analyse a besoin d'au moins une photo. La vidéo peut rester dans le post.",
   },
   pt: {
     section: "Adicionar captura",
@@ -183,7 +180,6 @@ const translations: TranslationMap<{
     assistant: "Assistente IA",
     manualSpecies: "É preciso informar a espécie manualmente",
     species: "Espécie",
-    place: "Local",
     length: "Comprimento, cm",
     weight: "Peso, kg",
     bait: "Isca ou montagem",
@@ -204,6 +200,12 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
   const router = useRouter();
   const { lang } = useLanguage();
   const t = translations[lang];
+  const mediaSceneStyle = {
+    "--panel-scene-image": `url('${withBasePath("/images/modal-bg.png")}')`,
+  } as CSSProperties;
+  const formSceneStyle = {
+    "--panel-scene-image": `url('${withBasePath("/modal-backgrounds/map-discovery-bg.png")}')`,
+  } as CSSProperties;
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [recognition, setRecognition] = useState<RecognitionPayload | null>(null);
@@ -357,11 +359,11 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
       <header className="space-y-2">
-        <p className="text-sm text-text-muted">{t.section}</p>
-        <h1 className="font-display text-[30px] font-semibold tracking-tight text-text-main">{t.title}</h1>
+        <h1 className="font-display text-[30px] font-semibold tracking-tight text-text-main">{t.section}</h1>
+        <p className="text-sm leading-6 text-text-muted">{t.title}</p>
       </header>
 
-      <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
+      <section className="glass-panel panel-scene rounded-[30px] border border-border-subtle p-4" style={mediaSceneStyle}>
         <div className="space-y-3">
           {mediaFiles.length > 0 ? (
             <>
@@ -375,7 +377,10 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
 
               <div className="grid grid-cols-4 gap-3">
                 {mediaFiles.map((file, index) => (
-                  <div key={`${file.name}-${index}`} className="relative overflow-hidden rounded-[18px] border border-white/8 bg-black/30">
+                  <div
+                    key={`${file.name}-${index}`}
+                    className="relative overflow-hidden rounded-[18px] border border-white/8 bg-black/30"
+                  >
                     {file.type.startsWith("video/") ? (
                       <div className="relative aspect-square">
                         <video src={previewUrls[index]} className="h-full w-full object-cover" />
@@ -495,7 +500,7 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
         </section>
       ) : null}
 
-      <section className="glass-panel rounded-[28px] border border-border-subtle p-4">
+      <section className="glass-panel panel-scene rounded-[28px] border border-border-subtle p-4" style={formSceneStyle}>
         <div className="grid gap-4">
           <label className="grid gap-2">
             <span className="text-sm font-medium text-text-muted">{t.species}</span>
@@ -507,20 +512,12 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
             />
           </label>
 
-          <label className="grid gap-2">
-            <span className="text-sm font-medium text-text-muted">{t.place}</span>
-            <select
-              value={form.placeId}
-              onChange={(event) => updateField("placeId", event.target.value)}
-              className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3 text-text-main focus:border-primary/30 focus:outline-none"
-            >
-              {places.map((place) => (
-                <option key={place.id} value={place.id} className="bg-background text-text-main">
-                  {place.name} · {place.city}
-                </option>
-              ))}
-            </select>
-          </label>
+          <PlaceSelectorField
+            places={places}
+            value={form.placeId}
+            onChange={(placeId) => updateField("placeId", placeId)}
+            speciesHint={form.species}
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <label className="grid gap-2">

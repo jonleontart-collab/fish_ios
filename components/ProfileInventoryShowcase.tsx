@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 
 import { withBasePath } from "@/lib/app-paths";
@@ -24,16 +25,16 @@ export function ProfileInventoryShowcase({
   items: InventoryItem[];
   action?: React.ReactNode;
 }) {
+  const sceneStyle = {
+    "--panel-scene-image": `url('${withBasePath("/modal-backgrounds/profile-panel-bg.png")}')`,
+  } as CSSProperties;
+
   return (
-    <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
+    <section className="glass-panel panel-scene rounded-[30px] border border-border-subtle p-4" style={sceneStyle}>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          {subtitle ? (
-            <div className="text-[12px] font-semibold uppercase tracking-[0.24em] text-text-muted">
-              {subtitle}
-            </div>
-          ) : null}
-          <div className="mt-1 text-[22px] font-semibold tracking-tight text-text-main">{title}</div>
+          {subtitle ? <div className="text-sm text-text-muted">{subtitle}</div> : null}
+          <div className="mt-1 text-[20px] font-semibold tracking-tight text-text-main">{title}</div>
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>

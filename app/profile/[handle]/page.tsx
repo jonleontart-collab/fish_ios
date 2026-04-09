@@ -1,11 +1,12 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays } from "lucide-react";
+import { ArrowLeft, CalendarDays, Trophy } from "lucide-react";
 
 import { CatchCard } from "@/components/CatchCard";
 import { DirectChatButton } from "@/components/DirectChatButton";
+import { FriendsPanel } from "@/components/FriendsPanel";
 import { FriendToggleButton } from "@/components/FriendToggleButton";
-import { FriendsDrawer } from "@/components/FriendsDrawer";
 import { ProfileInventoryShowcase } from "@/components/ProfileInventoryShowcase";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TripReportCard } from "@/components/TripReportCard";
@@ -25,17 +26,19 @@ const translations: TranslationMap<{
   catches: string;
   trips: string;
   friends: string;
+  friendsSubtitle: string;
+  friendsEmptyTitle: string;
+  friendsEmptyDescription: string;
+  openFriends: string;
   experience: string;
   prefers: string;
   favoriteWater: string;
-  recentCatches: string;
-  recentTrips: string;
-  gear: string;
-  gearLabel: string;
+  postsTitle: string;
+  tripsTitle: string;
+  gearTitle: string;
   emptyGear: string;
   emptyCatches: string;
   emptyTrips: string;
-  noPhoto: string;
   years: (value: number) => string;
 }> = {
   ru: {
@@ -44,17 +47,19 @@ const translations: TranslationMap<{
     catches: "Уловы",
     trips: "Поездки",
     friends: "Друзья",
-    experience: "Опыт ловли",
-    prefers: "Предпочитает",
-    favoriteWater: "Любимый водоем",
-    recentCatches: "Публикации",
-    recentTrips: "Поездки и отчеты",
-    gear: "Инвентарь",
-    gearLabel: "Снасти и экипировка",
+    friendsSubtitle: "Круг общения",
+    friendsEmptyTitle: "Пока без друзей",
+    friendsEmptyDescription: "Когда у пользователя появятся друзья, они будут показаны здесь.",
+    openFriends: "Все",
+    experience: "Опыт",
+    prefers: "Стиль",
+    favoriteWater: "Основная акватория",
+    postsTitle: "Улов",
+    tripsTitle: "Поездки",
+    gearTitle: "Снаряжение",
     emptyGear: "Этот пользователь пока не открыл свой инвентарь.",
     emptyCatches: "Пользователь пока не добавил публикации.",
     emptyTrips: "У пользователя пока нет опубликованных поездок.",
-    noPhoto: "Нет фото",
     years: (value) => `${value} лет`,
   },
   en: {
@@ -63,17 +68,19 @@ const translations: TranslationMap<{
     catches: "Catches",
     trips: "Trips",
     friends: "Friends",
+    friendsSubtitle: "Circle",
+    friendsEmptyTitle: "No friends yet",
+    friendsEmptyDescription: "When the user adds friends, they will appear here.",
+    openFriends: "All",
     experience: "Experience",
-    prefers: "Prefers",
-    favoriteWater: "Favorite water",
-    recentCatches: "Posts",
-    recentTrips: "Trips and reports",
-    gear: "Inventory",
-    gearLabel: "Tackle and gear",
+    prefers: "Style",
+    favoriteWater: "Home water",
+    postsTitle: "Posts",
+    tripsTitle: "Trips",
+    gearTitle: "Gear",
     emptyGear: "This user has not opened the inventory yet.",
     emptyCatches: "This user has not added posts yet.",
     emptyTrips: "This user does not have published trips yet.",
-    noPhoto: "No photo",
     years: (value) => `${value} years`,
   },
   es: {
@@ -82,17 +89,19 @@ const translations: TranslationMap<{
     catches: "Capturas",
     trips: "Salidas",
     friends: "Amigos",
+    friendsSubtitle: "Círculo",
+    friendsEmptyTitle: "Aún no hay amigos",
+    friendsEmptyDescription: "Cuando el usuario tenga amigos, aparecerán aquí.",
+    openFriends: "Todos",
     experience: "Experiencia",
-    prefers: "Prefiere",
-    favoriteWater: "Agua favorita",
-    recentCatches: "Publicaciones",
-    recentTrips: "Salidas y reportes",
-    gear: "Inventario",
-    gearLabel: "Equipo y aparejos",
+    prefers: "Estilo",
+    favoriteWater: "Agua principal",
+    postsTitle: "Publicaciones",
+    tripsTitle: "Salidas",
+    gearTitle: "Equipo",
     emptyGear: "Este usuario aún no ha abierto su inventario.",
     emptyCatches: "Este usuario todavía no ha añadido publicaciones.",
     emptyTrips: "Este usuario aún no tiene salidas publicadas.",
-    noPhoto: "Sin foto",
     years: (value) => `${value} años`,
   },
   fr: {
@@ -101,17 +110,19 @@ const translations: TranslationMap<{
     catches: "Prises",
     trips: "Sorties",
     friends: "Amis",
+    friendsSubtitle: "Cercle",
+    friendsEmptyTitle: "Pas encore d'amis",
+    friendsEmptyDescription: "Quand l'utilisateur aura des amis, ils apparaîtront ici.",
+    openFriends: "Tout",
     experience: "Expérience",
-    prefers: "Préfère",
-    favoriteWater: "Plan d'eau favori",
-    recentCatches: "Publications",
-    recentTrips: "Sorties et rapports",
-    gear: "Inventaire",
-    gearLabel: "Matériel et équipement",
+    prefers: "Style",
+    favoriteWater: "Plan d'eau principal",
+    postsTitle: "Publications",
+    tripsTitle: "Sorties",
+    gearTitle: "Équipement",
     emptyGear: "Cet utilisateur n'a pas encore ouvert son inventaire.",
     emptyCatches: "Cet utilisateur n'a pas encore ajouté de publications.",
     emptyTrips: "Cet utilisateur n'a pas encore de sorties publiées.",
-    noPhoto: "Sans photo",
     years: (value) => `${value} ans`,
   },
   pt: {
@@ -120,17 +131,19 @@ const translations: TranslationMap<{
     catches: "Capturas",
     trips: "Viagens",
     friends: "Amigos",
+    friendsSubtitle: "Círculo",
+    friendsEmptyTitle: "Ainda sem amigos",
+    friendsEmptyDescription: "Quando o usuário tiver amigos, eles aparecerão aqui.",
+    openFriends: "Todos",
     experience: "Experiência",
-    prefers: "Prefere",
-    favoriteWater: "Água favorita",
-    recentCatches: "Publicações",
-    recentTrips: "Viagens e relatórios",
-    gear: "Inventário",
-    gearLabel: "Equipamentos e apetrechos",
+    prefers: "Estilo",
+    favoriteWater: "Água principal",
+    postsTitle: "Publicações",
+    tripsTitle: "Viagens",
+    gearTitle: "Equipamentos",
     emptyGear: "Este usuário ainda não abriu o inventário.",
     emptyCatches: "Este usuário ainda não adicionou publicações.",
     emptyTrips: "Este usuário ainda não tem viagens publicadas.",
-    noPhoto: "Sem foto",
     years: (value) => `${value} anos`,
   },
 };
@@ -243,6 +256,10 @@ export default async function PublicProfilePage({
           ],
   }));
 
+  const profileSceneStyle = {
+    "--panel-scene-image": `url('${withBasePath("/modal-backgrounds/profile-panel-bg.png")}')`,
+  } as CSSProperties;
+
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
       <header className="flex items-center justify-between">
@@ -282,21 +299,21 @@ export default async function PublicProfilePage({
             {user.bio || t.fallbackBio}
           </div>
 
-          <div className="mt-5 flex items-center justify-center gap-4 text-sm font-semibold text-text-muted">
-            <div className="rounded-[16px] border border-white/5 bg-white/5 px-4 py-2 text-center shadow-lg backdrop-blur-md">
-              <div className="font-display text-[20px] font-bold text-white">{user._count.catches}</div>
-              <div className="mt-0.5 text-[10px] uppercase tracking-wider">{t.catches}</div>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-[20px] border border-white/5 bg-white/5 p-4 shadow-lg backdrop-blur-md">
+              <div className="flex items-center justify-center gap-2 text-sm text-text-muted">
+                <Trophy size={14} className="text-primary" />
+                {t.catches}
+              </div>
+              <div className="mt-2 text-[28px] font-bold leading-none text-white">{user._count.catches}</div>
             </div>
-            <div className="rounded-[16px] border border-white/5 bg-white/5 px-4 py-2 text-center shadow-lg backdrop-blur-md">
-              <div className="font-display text-[20px] font-bold text-white">{user._count.trips}</div>
-              <div className="mt-0.5 text-[10px] uppercase tracking-wider">{t.trips}</div>
+            <div className="rounded-[20px] border border-white/5 bg-white/5 p-4 shadow-lg backdrop-blur-md">
+              <div className="flex items-center justify-center gap-2 text-sm text-text-muted">
+                <CalendarDays size={14} className="text-accent" />
+                {t.trips}
+              </div>
+              <div className="mt-2 text-[28px] font-bold leading-none text-white">{user._count.trips}</div>
             </div>
-            <FriendsDrawer title={t.friends} subtitle={`@${user.handle}`} friends={friends}>
-              <button type="button" className="rounded-[16px] border border-white/5 bg-white/5 px-4 py-2 text-center shadow-lg backdrop-blur-md">
-                <div className="font-display text-[20px] font-bold text-white">{friends.length}</div>
-                <div className="mt-0.5 text-[10px] uppercase tracking-wider">{t.friends}</div>
-              </button>
-            </FriendsDrawer>
           </div>
 
           {viewer && viewer.id !== user.id ? (
@@ -305,43 +322,54 @@ export default async function PublicProfilePage({
               <DirectChatButton handle={user.handle} />
             </div>
           ) : null}
-
-          {user.experienceYears || user.preferredStyles || user.homeWater ? (
-            <div className="mx-auto mt-6 grid max-w-[340px] grid-cols-1 gap-3 rounded-[20px] border border-white/5 bg-white/5 p-4 text-left shadow-inner sm:grid-cols-2">
-              {user.experienceYears ? (
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{t.experience}</div>
-                  <div className="mt-0.5 text-[14px] font-medium text-white">{t.years(user.experienceYears)}</div>
-                </div>
-              ) : null}
-              {user.preferredStyles ? (
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{t.prefers}</div>
-                  <div className="mt-0.5 text-[14px] font-medium text-white">{user.preferredStyles}</div>
-                </div>
-              ) : null}
-              {user.homeWater ? (
-                <div className="sm:col-span-2">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{t.favoriteWater}</div>
-                  <div className="mt-0.5 text-[14px] font-medium text-white">{user.homeWater}</div>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       </div>
 
+      <FriendsPanel
+        title={t.friends}
+        subtitle={t.friendsSubtitle}
+        emptyTitle={t.friendsEmptyTitle}
+        emptyDescription={t.friendsEmptyDescription}
+        openLabel={t.openFriends}
+        friends={friends}
+      />
+
+      {user.experienceYears || user.preferredStyles || user.homeWater ? (
+        <section className="glass-panel panel-scene rounded-[30px] border border-border-subtle p-4" style={profileSceneStyle}>
+          <SectionHeader title={t.profile} />
+          <div className="mt-4 grid gap-3">
+            {user.experienceYears ? (
+              <div className="rounded-[22px] border border-border-subtle bg-white/4 p-4">
+                <div className="text-sm text-text-muted">{t.experience}</div>
+                <div className="mt-1 text-lg font-semibold text-text-main">{t.years(user.experienceYears)}</div>
+              </div>
+            ) : null}
+            {user.preferredStyles ? (
+              <div className="rounded-[22px] border border-border-subtle bg-white/4 p-4">
+                <div className="text-sm text-text-muted">{t.prefers}</div>
+                <div className="mt-1 text-lg font-semibold text-text-main">{user.preferredStyles}</div>
+              </div>
+            ) : null}
+            {user.homeWater ? (
+              <div className="rounded-[22px] border border-border-subtle bg-white/4 p-4">
+                <div className="text-sm text-text-muted">{t.favoriteWater}</div>
+                <div className="mt-1 text-lg font-semibold text-text-main">{user.homeWater}</div>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
       {user.showInventory ? (
         <ProfileInventoryShowcase
-          title={t.gearLabel}
-          subtitle={t.gear}
+          title={t.gearTitle}
           emptyLabel={t.emptyGear}
           items={user.inventoryItems}
         />
       ) : null}
 
       <section className="space-y-4">
-        <SectionHeader eyebrow={t.catches} />
+        <SectionHeader title={t.postsTitle} />
 
         {catches.length > 0 ? (
           <div className="space-y-4">
@@ -357,17 +385,7 @@ export default async function PublicProfilePage({
       </section>
 
       <section className="space-y-4">
-        <SectionHeader
-          eyebrow={t.trips}
-          action={
-            user.trips.length > 0 ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/6 px-3 py-2 text-sm font-semibold text-text-muted">
-                <CalendarDays size={14} />
-                {user.trips.length}
-              </span>
-            ) : null
-          }
-        />
+        <SectionHeader title={t.tripsTitle} />
 
         {user.trips.length > 0 ? (
           <div className="space-y-4">

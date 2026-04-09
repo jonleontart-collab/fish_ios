@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { CatchCard } from "@/components/CatchCard";
+import { FriendsPanel } from "@/components/FriendsPanel";
 import { HomeFishingEventsWidget } from "@/components/HomeFishingEventsWidget";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeTripsWidget } from "@/components/HomeTripsWidget";
@@ -19,8 +20,12 @@ const translations: TranslationMap<{
   homeLabel: string;
   homeTitle: string;
   addCatch: string;
+  friendsTitle: string;
+  friendsSubtitle: string;
+  friendsEmptyTitle: string;
+  friendsEmptyDescription: string;
+  openFriends: string;
   activityLabel: string;
-  activityFeed: string;
   emptyFeedTitle: string;
   emptyFeedDescription: string;
 }> = {
@@ -28,8 +33,12 @@ const translations: TranslationMap<{
     homeLabel: "Waterline",
     homeTitle: "FishFlow",
     addCatch: "Добавить улов",
+    friendsTitle: "Друзья",
+    friendsSubtitle: "Люди, с кем ты уже на связи",
+    friendsEmptyTitle: "Пока без друзей",
+    friendsEmptyDescription: "Добавь рыбаков из профилей, и они появятся здесь.",
+    openFriends: "Все",
     activityLabel: "Лента",
-    activityFeed: "Свежие публикации",
     emptyFeedTitle: "Лента пока пустая",
     emptyFeedDescription: "Подпишись на других рыбаков или добавь свой первый улов.",
   },
@@ -37,17 +46,25 @@ const translations: TranslationMap<{
     homeLabel: "Waterline",
     homeTitle: "FishFlow",
     addCatch: "Add catch",
+    friendsTitle: "Friends",
+    friendsSubtitle: "People already in your circle",
+    friendsEmptyTitle: "No friends yet",
+    friendsEmptyDescription: "Add anglers from profiles and they will appear here.",
+    openFriends: "All",
     activityLabel: "Feed",
-    activityFeed: "Fresh posts",
     emptyFeedTitle: "The feed is empty",
     emptyFeedDescription: "Follow other anglers or add your first catch.",
   },
   es: {
     homeLabel: "Waterline",
     homeTitle: "FishFlow",
-    addCatch: "Añadir captura",
+    addCatch: "Agregar captura",
+    friendsTitle: "Amigos",
+    friendsSubtitle: "Gente con la que ya estás conectado",
+    friendsEmptyTitle: "Aún no hay amigos",
+    friendsEmptyDescription: "Añade pescadores desde sus perfiles y aparecerán aquí.",
+    openFriends: "Todos",
     activityLabel: "Feed",
-    activityFeed: "Publicaciones recientes",
     emptyFeedTitle: "El feed está vacío",
     emptyFeedDescription: "Sigue a otros pescadores o añade tu primera captura.",
   },
@@ -55,8 +72,12 @@ const translations: TranslationMap<{
     homeLabel: "Waterline",
     homeTitle: "FishFlow",
     addCatch: "Ajouter une prise",
+    friendsTitle: "Amis",
+    friendsSubtitle: "Les personnes déjà dans votre cercle",
+    friendsEmptyTitle: "Pas encore d'amis",
+    friendsEmptyDescription: "Ajoutez des pêcheurs depuis leurs profils et ils apparaîtront ici.",
+    openFriends: "Tout",
     activityLabel: "Feed",
-    activityFeed: "Publications récentes",
     emptyFeedTitle: "Le feed est vide",
     emptyFeedDescription: "Suivez d'autres pêcheurs ou ajoutez votre première prise.",
   },
@@ -64,8 +85,12 @@ const translations: TranslationMap<{
     homeLabel: "Waterline",
     homeTitle: "FishFlow",
     addCatch: "Adicionar captura",
+    friendsTitle: "Amigos",
+    friendsSubtitle: "Pessoas que já estão no seu círculo",
+    friendsEmptyTitle: "Ainda sem amigos",
+    friendsEmptyDescription: "Adicione pescadores pelos perfis e eles aparecerão aqui.",
+    openFriends: "Todos",
     activityLabel: "Feed",
-    activityFeed: "Publicações recentes",
     emptyFeedTitle: "O feed está vazio",
     emptyFeedDescription: "Siga outros pescadores ou adicione sua primeira captura.",
   },
@@ -122,6 +147,16 @@ export default async function Home() {
           savedPlacesCount={dashboard.stats.placesCount}
         />
 
+        <FriendsPanel
+          title={t.friendsTitle}
+          subtitle={t.friendsSubtitle}
+          emptyTitle={t.friendsEmptyTitle}
+          emptyDescription={t.friendsEmptyDescription}
+          openLabel={t.openFriends}
+          friends={dashboard.friends}
+          variant="home"
+        />
+
         <HomeTripsWidget lang={lang} trips={dashboard.upcomingTrips} />
         <HomeFishingEventsWidget />
 
@@ -135,7 +170,7 @@ export default async function Home() {
       </div>
 
       <div className="mb-4 mt-8 px-4 sm:px-0">
-        <SectionHeader eyebrow={t.activityLabel} />
+        <SectionHeader title={t.activityLabel} />
       </div>
 
       <div className="sm:space-y-6">

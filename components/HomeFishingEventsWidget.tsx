@@ -1,5 +1,6 @@
-'use client';
+"use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight, ExternalLink, Loader2, MapPin, Sparkles } from "lucide-react";
 import { Drawer } from "vaul";
@@ -195,12 +196,15 @@ export function HomeFishingEventsWidget() {
   }, [lang, location]);
 
   const previewEvents = events.slice(0, 3);
+  const sceneStyle = {
+    "--panel-scene-image": `url('${withBasePath("/graphics/place-clear-lake.png")}')`,
+  } as CSSProperties;
 
   return (
     <>
-      <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
+      <section className="glass-panel panel-scene rounded-[30px] border border-border-subtle p-4" style={sceneStyle}>
         <SectionHeader
-          eyebrow={t.section}
+          title={t.section}
           action={
             events.length > 0 ? (
               <button

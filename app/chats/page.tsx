@@ -164,7 +164,7 @@ export default async function ChatsPage() {
       <CreateChatForm />
 
       <section className="space-y-3">
-        <SectionHeader eyebrow={t.yours} />
+        <SectionHeader title={t.yoursTitle} />
 
         <div className="space-y-3">
           {data.chats.length > 0 ? (
@@ -253,7 +253,7 @@ export default async function ChatsPage() {
       </section>
 
       <section className="space-y-3">
-        <SectionHeader eyebrow={t.openChats} />
+        <SectionHeader title={t.openChatsTitle} />
         <div className="space-y-3">
           {data.discoverableChats.length > 0 ? (
             data.discoverableChats.map((chatItem) => (

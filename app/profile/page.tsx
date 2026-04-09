@@ -1,8 +1,9 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Trophy, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Trophy } from "lucide-react";
 
 import { CatchCard } from "@/components/CatchCard";
-import { FriendsDrawer } from "@/components/FriendsDrawer";
+import { FriendsPanel } from "@/components/FriendsPanel";
 import { InventoryManager } from "@/components/InventoryManager";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ProfileEditor } from "@/components/ProfileEditor";
@@ -24,54 +25,56 @@ const translations: TranslationMap<{
   catches: string;
   trips: string;
   friends: string;
-  profileActions: string;
+  friendsSubtitle: string;
+  friendsEmptyTitle: string;
+  friendsEmptyDescription: string;
+  openFriends: string;
   about: string;
   experience: string;
   homeWater: string;
   style: string;
   emptyField: string;
-  shoppingList: string;
+  shopping: string;
   tripLabel: string;
   emptyShopping: string;
-  latestPosts: string;
+  posts: string;
   add: string;
   noPosts: string;
-  planAndReports: string;
+  tripsTitle: string;
   allTrips: string;
   noTrips: string;
-  gear: string;
-  gearLabel: string;
+  gearTitle: string;
   gearEmpty: string;
   years: (value: number) => string;
-  noPhoto: string;
   logout: string;
 }> = {
   ru: {
     back: "Назад на главную",
-    fallbackBio: "Добавьте пару слов о себе, чтобы другие рыбаки быстрее понимали, как вы ловите и что публикуете.",
+    fallbackBio: "Добавь пару слов о себе, чтобы другие рыбаки сразу понимали твой стиль и что ты публикуешь.",
     catches: "Уловы",
     trips: "Поездки",
     friends: "Друзья",
-    profileActions: "Профиль",
-    about: "О профиле",
+    friendsSubtitle: "Твой круг общения",
+    friendsEmptyTitle: "Пока без друзей",
+    friendsEmptyDescription: "Добавляй людей из профилей, и они появятся здесь.",
+    openFriends: "Все",
+    about: "Профиль",
     experience: "Опыт",
     homeWater: "Основная акватория",
     style: "Стиль ловли",
     emptyField: "Еще не заполнено",
-    shoppingList: "Покупки к поездкам",
+    shopping: "Покупки",
     tripLabel: "Поездка",
     emptyShopping: "Список покупок пуст. В планировщике можно собрать покупки под конкретные поездки.",
-    latestPosts: "Публикации",
+    posts: "Улов",
     add: "Добавить",
     noPosts: "Публикаций пока нет. Добавь улов или отчет о поездке, и профиль оживет.",
-    planAndReports: "Поездки и отчеты",
+    tripsTitle: "Поездки",
     allTrips: "Все поездки",
     noTrips: "Пока нет поездок. Запланируй выезд, добавь цели и потом опубликуй отчет в ленту.",
-    gear: "Инвентарь",
-    gearLabel: "Снасти и экипировка",
+    gearTitle: "Снаряжение",
     gearEmpty: "Пока нет добавленных снастей. Заполни инвентарь, чтобы профиль выглядел живым и полезным.",
     years: (value) => `${value} лет`,
-    noPhoto: "Нет фото",
     logout: "Выйти",
   },
   en: {
@@ -80,26 +83,27 @@ const translations: TranslationMap<{
     catches: "Catches",
     trips: "Trips",
     friends: "Friends",
-    profileActions: "Profile",
-    about: "About",
+    friendsSubtitle: "Your circle",
+    friendsEmptyTitle: "No friends yet",
+    friendsEmptyDescription: "Add people from profiles and they will appear here.",
+    openFriends: "All",
+    about: "Profile",
     experience: "Experience",
     homeWater: "Home water",
     style: "Fishing style",
     emptyField: "Not filled yet",
-    shoppingList: "Trip shopping list",
+    shopping: "Shopping",
     tripLabel: "Trip",
     emptyShopping: "Your shopping list is empty. Use the planner to collect purchases for specific trips.",
-    latestPosts: "Posts",
+    posts: "Posts",
     add: "Add",
     noPosts: "No posts yet. Add a catch or a trip report to bring this profile to life.",
-    planAndReports: "Trips and reports",
+    tripsTitle: "Trips",
     allTrips: "All trips",
     noTrips: "No trips yet. Plan one, add goals, and publish the report later.",
-    gear: "Inventory",
-    gearLabel: "Tackle and gear",
+    gearTitle: "Gear",
     gearEmpty: "No tackle added yet. Fill your inventory to make the profile more useful.",
     years: (value) => `${value} years`,
-    noPhoto: "No photo",
     logout: "Log out",
   },
   es: {
@@ -108,26 +112,27 @@ const translations: TranslationMap<{
     catches: "Capturas",
     trips: "Salidas",
     friends: "Amigos",
-    profileActions: "Perfil",
-    about: "Acerca del perfil",
+    friendsSubtitle: "Tu círculo",
+    friendsEmptyTitle: "Aún no hay amigos",
+    friendsEmptyDescription: "Añade gente desde los perfiles y aparecerán aquí.",
+    openFriends: "Todos",
+    about: "Perfil",
     experience: "Experiencia",
     homeWater: "Agua principal",
     style: "Estilo de pesca",
     emptyField: "Aún no completado",
-    shoppingList: "Compras para salidas",
+    shopping: "Compras",
     tripLabel: "Salida",
     emptyShopping: "La lista de compras está vacía. Usa el planificador para preparar compras por salida.",
-    latestPosts: "Publicaciones",
+    posts: "Publicaciones",
     add: "Añadir",
     noPosts: "Todavía no hay publicaciones. Añade una captura o un reporte para dar vida al perfil.",
-    planAndReports: "Salidas y reportes",
+    tripsTitle: "Salidas",
     allTrips: "Todas las salidas",
     noTrips: "Aún no hay salidas. Planifica una, añade objetivos y publica el reporte después.",
-    gear: "Inventario",
-    gearLabel: "Equipo y aparejos",
+    gearTitle: "Equipo",
     gearEmpty: "Todavía no hay equipo añadido. Completa el inventario para dar más vida al perfil.",
     years: (value) => `${value} años`,
-    noPhoto: "Sin foto",
     logout: "Salir",
   },
   fr: {
@@ -136,26 +141,27 @@ const translations: TranslationMap<{
     catches: "Prises",
     trips: "Sorties",
     friends: "Amis",
-    profileActions: "Profil",
-    about: "À propos",
+    friendsSubtitle: "Votre cercle",
+    friendsEmptyTitle: "Pas encore d'amis",
+    friendsEmptyDescription: "Ajoutez des personnes depuis les profils et elles apparaîtront ici.",
+    openFriends: "Tout",
+    about: "Profil",
     experience: "Expérience",
     homeWater: "Plan d'eau principal",
     style: "Style de pêche",
     emptyField: "Pas encore renseigné",
-    shoppingList: "Achats pour les sorties",
+    shopping: "Achats",
     tripLabel: "Sortie",
     emptyShopping: "La liste d'achats est vide. Utilisez le planificateur pour préparer les sorties.",
-    latestPosts: "Publications",
+    posts: "Publications",
     add: "Ajouter",
     noPosts: "Aucune publication pour le moment. Ajoutez une prise ou un rapport pour animer le profil.",
-    planAndReports: "Sorties et rapports",
+    tripsTitle: "Sorties",
     allTrips: "Toutes les sorties",
     noTrips: "Aucune sortie pour le moment. Planifiez-en une, ajoutez des objectifs et publiez le rapport ensuite.",
-    gear: "Inventaire",
-    gearLabel: "Matériel et équipement",
-    gearEmpty: "Aucun matériel ajouté pour le moment. Remplissez votre inventaire pour enrichir le profil.",
+    gearTitle: "Équipement",
+    gearEmpty: "Aucun matériel ajouté pour le moment. Remplissez l'inventaire pour enrichir le profil.",
     years: (value) => `${value} ans`,
-    noPhoto: "Sans photo",
     logout: "Déconnexion",
   },
   pt: {
@@ -164,26 +170,27 @@ const translations: TranslationMap<{
     catches: "Capturas",
     trips: "Viagens",
     friends: "Amigos",
-    profileActions: "Perfil",
-    about: "Sobre",
+    friendsSubtitle: "Seu círculo",
+    friendsEmptyTitle: "Ainda sem amigos",
+    friendsEmptyDescription: "Adicione pessoas pelos perfis e elas aparecerão aqui.",
+    openFriends: "Todos",
+    about: "Perfil",
     experience: "Experiência",
     homeWater: "Água principal",
     style: "Estilo de pesca",
     emptyField: "Ainda não preenchido",
-    shoppingList: "Compras para viagens",
+    shopping: "Compras",
     tripLabel: "Viagem",
     emptyShopping: "A lista de compras está vazia. Use o planejador para montar compras por viagem.",
-    latestPosts: "Publicações",
+    posts: "Publicações",
     add: "Adicionar",
     noPosts: "Ainda não há publicações. Adicione uma captura ou um relatório para dar vida ao perfil.",
-    planAndReports: "Viagens e relatórios",
+    tripsTitle: "Viagens",
     allTrips: "Todas as viagens",
     noTrips: "Ainda não há viagens. Planeje uma, defina objetivos e publique o relatório depois.",
-    gear: "Inventário",
-    gearLabel: "Equipamentos e apetrechos",
+    gearTitle: "Equipamentos",
     gearEmpty: "Ainda não há equipamento cadastrado. Preencha o inventário para enriquecer o perfil.",
     years: (value) => `${value} anos`,
-    noPhoto: "Sem foto",
     logout: "Sair",
   },
 };
@@ -229,48 +236,22 @@ export default async function ProfilePage() {
             {profile.user.bio || t.fallbackBio}
           </div>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <div className="min-w-[90px] flex-1 rounded-[20px] border border-white/5 bg-white/5 p-3 shadow-xl backdrop-blur-md">
-              <div className="mb-1 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                <Trophy size={14} className="text-primary" /> {t.catches}
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="rounded-[20px] border border-white/5 bg-white/5 p-4 shadow-xl backdrop-blur-md">
+              <div className="flex items-center justify-center gap-2 text-sm text-text-muted">
+                <Trophy size={14} className="text-primary" />
+                {t.catches}
               </div>
-              <div className="text-[24px] font-bold leading-none text-white">{profile.stats.catches}</div>
+              <div className="mt-2 text-[28px] font-bold leading-none text-white">{profile.stats.catches}</div>
             </div>
 
-            <div className="min-w-[90px] flex-1 rounded-[20px] border border-white/5 bg-white/5 p-3 shadow-xl backdrop-blur-md">
-              <div className="mb-1 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                <CalendarDays size={14} className="text-accent" /> {t.trips}
+            <div className="rounded-[20px] border border-white/5 bg-white/5 p-4 shadow-xl backdrop-blur-md">
+              <div className="flex items-center justify-center gap-2 text-sm text-text-muted">
+                <CalendarDays size={14} className="text-accent" />
+                {t.trips}
               </div>
-              <div className="text-[24px] font-bold leading-none text-white">{profile.stats.trips}</div>
+              <div className="mt-2 text-[28px] font-bold leading-none text-white">{profile.stats.trips}</div>
             </div>
-
-            <FriendsDrawer title={t.friends} subtitle={t.profileActions} friends={profile.friends}>
-              <button
-                type="button"
-                className="min-w-[90px] flex-1 rounded-[20px] border border-white/5 bg-white/5 p-3 shadow-xl transition hover:bg-white/10"
-              >
-                <div className="mb-1 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                  <Users size={14} className="text-primary" /> {t.friends}
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <div className="text-[24px] font-bold leading-none text-white">{profile.stats.friends}</div>
-                  {profile.friends.length > 0 ? (
-                    <div className="flex -space-x-2">
-                      {profile.friends.slice(0, 2).map((friend) =>
-                        <UserAvatar
-                          key={friend.id}
-                          name={friend.name}
-                          avatarPath={friend.avatarPath}
-                          className="h-6 w-6 border border-background"
-                          fallbackClassName="bg-white/8"
-                          iconSize={11}
-                        />,
-                      )}
-                    </div>
-                  ) : null}
-                </div>
-              </button>
-            </FriendsDrawer>
           </div>
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -285,8 +266,17 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-        <SectionHeader eyebrow={t.about} />
+      <FriendsPanel
+        title={t.friends}
+        subtitle={t.friendsSubtitle}
+        emptyTitle={t.friendsEmptyTitle}
+        emptyDescription={t.friendsEmptyDescription}
+        openLabel={t.openFriends}
+        friends={profile.friends}
+      />
+
+      <section className="glass-panel panel-scene rounded-[30px] border border-border-subtle p-4" style={{ "--panel-scene-image": `url('${withBasePath("/modal-backgrounds/profile-panel-bg.png")}')` } as CSSProperties}>
+        <SectionHeader title={t.about} />
         <div className="mt-4 grid gap-3">
           <div className="rounded-[22px] border border-border-subtle bg-white/4 p-4">
             <div className="text-sm text-text-muted">{t.experience}</div>
@@ -306,12 +296,11 @@ export default async function ProfilePage() {
       </section>
 
       <ProfileInventoryShowcase
-        title={t.gearLabel}
-        subtitle={t.gear}
+        title={t.gearTitle}
         emptyLabel={t.gearEmpty}
         items={profile.inventoryItems.slice(0, 4)}
         action={
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/6 px-3 py-2 text-sm font-semibold text-text-muted">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/8 px-3 py-2 text-sm font-semibold text-text-main">
             {profile.inventoryItems.length}
           </span>
         }
@@ -319,8 +308,8 @@ export default async function ProfilePage() {
 
       <InventoryManager items={profile.inventoryItems} />
 
-      <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-        <SectionHeader eyebrow={t.shoppingList} />
+      <section className="glass-panel panel-scene rounded-[30px] border border-border-subtle p-4" style={{ "--panel-scene-image": `url('${withBasePath("/modal-backgrounds/profile-panel-bg.png")}')` } as CSSProperties}>
+        <SectionHeader title={t.shopping} />
         <div className="mt-4 space-y-3">
           {profile.shoppingItems.length > 0 ? (
             profile.shoppingItems.map((item) => (
@@ -343,9 +332,12 @@ export default async function ProfilePage() {
 
       <section className="space-y-4">
         <SectionHeader
-          eyebrow={t.catches}
+          title={t.posts}
           action={
-            <Link href="/add" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10">
+            <Link
+              href="/add"
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10"
+            >
               {t.add}
             </Link>
           }
@@ -363,9 +355,12 @@ export default async function ProfilePage() {
 
       <section className="space-y-4">
         <SectionHeader
-          eyebrow={t.trips}
+          title={t.tripsTitle}
           action={
-            <Link href="/trips" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10">
+            <Link
+              href="/trips"
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3.5 py-2 text-sm font-semibold text-text-main transition hover:bg-white/10"
+            >
               {t.allTrips}
             </Link>
           }

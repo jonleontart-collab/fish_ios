@@ -125,7 +125,6 @@ export default async function FeedPage() {
     <div className="space-y-5 px-4 pb-8 pt-safe">
       <header className="space-y-4">
         <SectionHeader
-          eyebrow={t.section}
           title={t.title}
           description={t.subtitle}
           action={
@@ -157,7 +156,7 @@ export default async function FeedPage() {
 
       {recommendedCatches.length > 0 ? (
         <section className="space-y-3">
-          <SectionHeader eyebrow={t.recommended} />
+          <SectionHeader title={t.recommendedTitle} />
           <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
             {recommendedCatches.map((catchItem) => {
               const preview = catchItem.mediaItems[0];
