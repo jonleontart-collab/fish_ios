@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Пользователь не найден." }, { status: 500 });
   }
 
-  const invitedUsers =
+  const invitedUsers: Array<{ id: string }> =
     parsed.data.inviteHandles && parsed.data.inviteHandles.length > 0
       ? await prisma.user.findMany({
           where: {

@@ -5,6 +5,8 @@ type ChatMemberLike = {
   user: {
     name: string;
     handle: string;
+    avatarPath?: string | null;
+    avatarGradient?: string;
   };
 };
 
