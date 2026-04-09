@@ -1,27 +1,39 @@
-const { Client } = require('ssh2');
+async function main() {
+  const { Client } = await import("ssh2");
 
-const conn = new Client();
-console.log('Connecting to Zomro VPS...');
+  const host = process.env.DEPLOY_HOST;
+  const username = process.env.DEPLOY_USER;
+  const password = process.env.DEPLOY_PASSWORD;
 
-conn.on('ready', () => {
-  console.log('Successfully connected to the server!');
-  
-  conn.shell((err, stream) => {
-    if (err) throw err;
-    
-    stream.on('close', () => {
-      console.log('Deployment session finished.');
-      conn.end();
-    }).on('data', (data) => {
-      process.stdout.write(data.toString());
-      if (data.toString().includes('pm2 startup')) {
-        setTimeout(() => stream.close(), 1000);
-      }
-    });
+  if (!host || !username || !password) {
+    throw new Error("DEPLOY_HOST, DEPLOY_USER, and DEPLOY_PASSWORD must be set.");
+  }
 
-    console.log('Executing deployment commands...');
-    
-    stream.write(`
+  const conn = new Client();
+  console.log("Connecting to VPS...");
+
+  conn
+    .on("ready", () => {
+      console.log("Successfully connected to the server!");
+
+      conn.shell((err, stream) => {
+        if (err) throw err;
+
+        stream
+          .on("close", () => {
+            console.log("Deployment session finished.");
+            conn.end();
+          })
+          .on("data", (data) => {
+            process.stdout.write(data.toString());
+            if (data.toString().includes("pm2 startup")) {
+              setTimeout(() => stream.close(), 1000);
+            }
+          });
+
+        console.log("Executing deployment commands...");
+
+        stream.write(`
       curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && \\
       sudo apt-get install -y nodejs git && \\
       sudo npm i -g pm2 && \\
@@ -37,13 +49,21 @@ conn.on('ready', () => {
       pm2 startup && \\
       echo "DEPLOYMENT_COMPLETE"
     \n`);
-  });
-}).on('error', (err) => {
-  console.error('Connection error: ', err.message);
-}).connect({
-  host: '188.137.178.42',
-  port: 22,
-  username: 'root',
-  password: 'NBnU150YnjrL0l',
-  readyTimeout: 20000
+      });
+    })
+    .on("error", (err) => {
+      console.error("Connection error:", err.message);
+    })
+    .connect({
+      host,
+      port: 22,
+      username,
+      password,
+      readyTimeout: 20000,
+    });
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
 });

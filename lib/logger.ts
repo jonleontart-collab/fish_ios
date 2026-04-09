@@ -1,24 +1,25 @@
 import fs from "fs";
 import path from "path";
 
-// Записываем логи в файл debug.log в корне проекта
 const LOG_FILE = path.join(process.cwd(), "debug.log");
 
-function formatMessage(level: string, context: string, message: string, data?: any) {
+type LogData = unknown;
+
+function formatMessage(level: string, context: string, message: string, data?: LogData) {
   const ts = new Date().toISOString();
   let text = `[${ts}] [${level}] [${context}] ${message}`;
-  
+
   if (data !== undefined) {
     if (data instanceof Error) {
       text += `\nError: ${data.message}\nStack: ${data.stack}`;
-    } else if (typeof data === "object") {
+    } else if (typeof data === "object" && data !== null) {
       text += `\nData: ${JSON.stringify(data, null, 2)}`;
     } else {
       text += ` ${String(data)}`;
     }
   }
-  
-  return text + "\n";
+
+  return `${text}\n`;
 }
 
 function writeToFile(text: string) {
@@ -30,21 +31,21 @@ function writeToFile(text: string) {
 }
 
 export const logger = {
-  info: (context: string, message: string, data?: any) => {
+  info: (context: string, message: string, data?: LogData) => {
     const text = formatMessage("INFO", context, message, data);
     console.info(text.trim());
     writeToFile(text);
   },
-  
-  warn: (context: string, message: string, data?: any) => {
+
+  warn: (context: string, message: string, data?: LogData) => {
     const text = formatMessage("WARN", context, message, data);
     console.warn(text.trim());
     writeToFile(text);
   },
-  
-  error: (context: string, message: string, error?: any) => {
+
+  error: (context: string, message: string, error?: LogData) => {
     const text = formatMessage("ERROR", context, message, error);
     console.error(text.trim());
     writeToFile(text);
-  }
+  },
 };

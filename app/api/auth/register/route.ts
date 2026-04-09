@@ -1,7 +1,10 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+
+import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
+
+const DEFAULT_AVATAR_GRADIENT = "from-[#69f0ae] via-[#4fd1c5] to-[#4c6fff]";
 
 export async function POST(req: Request) {
   try {
@@ -11,10 +14,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    // Determine avatar
-    const randomAvatar = `/images/vatar-2.jpg`; // Fallback to a seeded image or maybe blank
-    
-    // Create new unique user
+    const randomAvatar = "/images/vatar-2.jpg";
     const baseHandle = slugify(name);
     const randomSuffix = Math.floor(Math.random() * 10000);
     const handle = `${baseHandle}-${randomSuffix}`;
@@ -23,15 +23,20 @@ export async function POST(req: Request) {
       data: {
         handle,
         name,
+        avatarGradient: DEFAULT_AVATAR_GRADIENT,
         avatarPath: randomAvatar,
       },
     });
 
     const cookieStore = await cookies();
-    cookieStore.set("fishflow_uid", user.id, { path: "/", secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
+    cookieStore.set("fishflow_uid", user.id, {
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
+    });
 
-    // Set Translation Cookie
-    cookieStore.set("googtrans", `/ru/${lang}`, { path: "/", domain: "188.137.178.42" }); // Specifically for exact domain or empty
+    cookieStore.set("googtrans", `/ru/${lang}`, { path: "/", domain: "188.137.178.42" });
     cookieStore.set("googtrans", `/ru/${lang}`, { path: "/" });
 
     return NextResponse.json({ user });
