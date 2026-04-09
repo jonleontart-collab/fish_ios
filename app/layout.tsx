@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+
+import { LanguageProvider } from "@/components/LanguageProvider";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LocationProvider } from "@/components/LocationProvider";
-import TabBar from "@/components/TabBar";
 import Onboarding from "@/components/Onboarding";
+import TabBar from "@/components/TabBar";
 import { withBasePath } from "@/lib/app-paths";
+import { getServerLanguage } from "@/lib/i18n-server";
 import { getCurrentUser } from "@/lib/queries";
 import "./globals.css";
 
@@ -17,7 +21,7 @@ export const metadata: Metadata = {
     default: "FishFlow",
     template: "%s · FishFlow",
   },
-  description: "Рыболовная соцсеть с лентой, картой мест, поездками, чатами и AI-поиском точек рядом.",
+  description: "FishFlow fishing network with feed, places, trips, chats, and AI tools.",
   manifest: withBasePath("/manifest.json"),
 };
 
@@ -34,29 +38,35 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const lang = await getServerLanguage();
   const user = await getCurrentUser();
 
   return (
-    <html lang="ru" data-scroll-behavior="smooth" className={`${inter.variable}`}>
-      <body className="min-h-screen bg-background text-text-main font-sans">
-        <LocationProvider>
-          {user ? (
-            <>
-              <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-                <div className="absolute left-1/2 top-[-12rem] h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-primary/12 blur-[120px]" />
-                <div className="absolute bottom-[-10rem] right-[-8rem] h-[22rem] w-[22rem] rounded-full bg-accent/12 blur-[120px]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(133,194,255,0.08),transparent_32%),radial-gradient(circle_at_bottom,rgba(103,232,178,0.08),transparent_28%)]" />
-              </div>
+    <html lang={lang} data-scroll-behavior="smooth" className={inter.variable}>
+      <body className="min-h-screen bg-background font-sans text-text-main">
+        <LanguageProvider initialLanguage={lang}>
+          <LocationProvider>
+            {user ? (
+              <>
+                <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+                  <div className="absolute left-1/2 top-[-12rem] h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-primary/12 blur-[120px]" />
+                  <div className="absolute bottom-[-10rem] right-[-8rem] h-[22rem] w-[22rem] rounded-full bg-accent/12 blur-[120px]" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(133,194,255,0.08),transparent_32%),radial-gradient(circle_at_bottom,rgba(103,232,178,0.08),transparent_28%)]" />
+                </div>
 
-              <main className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">{children}</main>
-              <TabBar />
-            </>
-          ) : (
-            <Onboarding />
-          )}
-        </LocationProvider>
-        
-        {/* Service Worker */}
+                <div className="fixed right-4 top-[calc(env(safe-area-inset-top)+12px)] z-[120]">
+                  <LanguageSwitcher compact />
+                </div>
+
+                <main className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">{children}</main>
+                <TabBar />
+              </>
+            ) : (
+              <Onboarding />
+            )}
+          </LocationProvider>
+        </LanguageProvider>
+
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -68,15 +78,6 @@ export default async function RootLayout({
             `,
           }}
         />
-
-        {/* Google Translate Auto-Init Script */}
-        <div id="google_translate_element" style={{ display: 'none' }} />
-        <script
-          dangerouslySetInnerHTML={{
-             __html: `function googleTranslateElementInit() { new google.translate.TranslateElement({pageLanguage: 'ru', autoDisplay: false}, 'google_translate_element'); }`
-          }}
-        />
-        <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer />
       </body>
     </html>
   );

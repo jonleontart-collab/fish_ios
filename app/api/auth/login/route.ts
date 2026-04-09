@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { verifyPassword } from "@/lib/auth";
-import { APP_COOKIE_PATH } from "@/lib/app-paths";
+import { getLanguageCookieOptions, getSessionCookieOptions } from "@/lib/auth-cookies";
+import { LANGUAGE_COOKIE_NAME, normalizeLanguage, type LanguageCode } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 
@@ -12,14 +13,45 @@ type LoginPayload = {
   lang?: string;
 };
 
+const errors: Record<LanguageCode, Record<"missing" | "invalid" | "generic", string>> = {
+  ru: {
+    missing: "Укажи никнейм и пароль.",
+    invalid: "Неверный никнейм или пароль.",
+    generic: "Не удалось выполнить вход.",
+  },
+  en: {
+    missing: "Enter your nickname and password.",
+    invalid: "Incorrect nickname or password.",
+    generic: "Sign-in failed.",
+  },
+  es: {
+    missing: "Introduce tu apodo y contraseña.",
+    invalid: "Apodo o contraseña incorrectos.",
+    generic: "No se pudo iniciar sesión.",
+  },
+  fr: {
+    missing: "Saisissez votre pseudo et votre mot de passe.",
+    invalid: "Pseudo ou mot de passe incorrect.",
+    generic: "La connexion a échoué.",
+  },
+  pt: {
+    missing: "Informe seu apelido e senha.",
+    invalid: "Apelido ou senha incorretos.",
+    generic: "Não foi possível entrar.",
+  },
+};
+
 export async function POST(req: Request) {
+  const cookieStore = await cookies();
+
   try {
-    const { handle, password, lang = "ru" } = (await req.json()) as LoginPayload;
+    const { handle, password, lang } = (await req.json()) as LoginPayload;
+    const language = normalizeLanguage(lang);
     const safeHandle = slugify(handle?.trim() ?? "");
     const safePassword = password?.trim() ?? "";
 
     if (!safeHandle || !safePassword) {
-      return NextResponse.json({ error: "Укажи никнейм и пароль." }, { status: 400 });
+      return NextResponse.json({ error: errors[language].missing }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -27,22 +59,16 @@ export async function POST(req: Request) {
     });
 
     if (!user?.passwordHash || !verifyPassword(safePassword, user.passwordHash)) {
-      return NextResponse.json({ error: "Неверный никнейм или пароль." }, { status: 401 });
+      return NextResponse.json({ error: errors[language].invalid }, { status: 401 });
     }
 
-    const cookieStore = await cookies();
-    cookieStore.set("fishflow_uid", user.id, {
-      path: APP_COOKIE_PATH,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      httpOnly: true,
-      maxAge: 60 * 60 * 24 * 365,
-    });
-    cookieStore.set("googtrans", `/ru/${lang}`, { path: "/" });
+    cookieStore.set("fishflow_uid", user.id, getSessionCookieOptions(req));
+    cookieStore.set(LANGUAGE_COOKIE_NAME, language, getLanguageCookieOptions(req));
 
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Не удалось выполнить вход." }, { status: 500 });
+    const language = normalizeLanguage(cookieStore.get(LANGUAGE_COOKIE_NAME)?.value);
+    return NextResponse.json({ error: errors[language].generic }, { status: 500 });
   }
 }

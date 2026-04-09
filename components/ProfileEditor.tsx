@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, useTransition, useEffect } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Upload } from "lucide-react";
+
+import { useLanguage } from "@/components/LanguageProvider";
 import { apiPath, withBasePath } from "@/lib/app-paths";
+import type { TranslationMap } from "@/lib/i18n";
 
 type ProfileEditorProps = {
   user: {
@@ -21,8 +24,102 @@ type ProfileEditorProps = {
   };
 };
 
+const translations: TranslationMap<{
+  section: string;
+  appearance: string;
+  bannerAlt: string;
+  updateBanner: string;
+  name: string;
+  city: string;
+  experienceYears: string;
+  homeWater: string;
+  preferredStyles: string;
+  bio: string;
+  saveError: string;
+  saving: string;
+  save: string;
+}> = {
+  ru: {
+    section: "Редактирование профиля",
+    appearance: "Внешний вид",
+    bannerAlt: "Баннер профиля",
+    updateBanner: "Обновить баннер",
+    name: "Имя",
+    city: "Город",
+    experienceYears: "Стаж, лет",
+    homeWater: "Основная акватория или регион",
+    preferredStyles: "Стили ловли: спиннинг, фидер, лодка",
+    bio: "Коротко о себе, стиле ловли и том, чем делишься в ленте",
+    saveError: "Не удалось сохранить профиль.",
+    saving: "Сохраняем",
+    save: "Сохранить профиль",
+  },
+  en: {
+    section: "Edit profile",
+    appearance: "Appearance",
+    bannerAlt: "Profile banner",
+    updateBanner: "Update banner",
+    name: "Name",
+    city: "City",
+    experienceYears: "Experience, years",
+    homeWater: "Home water or region",
+    preferredStyles: "Fishing styles: spinning, feeder, boat",
+    bio: "A short note about yourself, your style, and what you share in the feed",
+    saveError: "Could not save the profile.",
+    saving: "Saving",
+    save: "Save profile",
+  },
+  es: {
+    section: "Editar perfil",
+    appearance: "Apariencia",
+    bannerAlt: "Banner del perfil",
+    updateBanner: "Actualizar banner",
+    name: "Nombre",
+    city: "Ciudad",
+    experienceYears: "Experiencia, años",
+    homeWater: "Zona principal o región",
+    preferredStyles: "Estilos: spinning, feeder, barco",
+    bio: "Cuéntanos brevemente sobre ti, tu estilo y lo que compartes en el feed",
+    saveError: "No se pudo guardar el perfil.",
+    saving: "Guardando",
+    save: "Guardar perfil",
+  },
+  fr: {
+    section: "Modifier le profil",
+    appearance: "Apparence",
+    bannerAlt: "Bannière du profil",
+    updateBanner: "Mettre à jour la bannière",
+    name: "Nom",
+    city: "Ville",
+    experienceYears: "Expérience, années",
+    homeWater: "Plan d'eau principal ou région",
+    preferredStyles: "Styles: spinning, feeder, bateau",
+    bio: "Quelques mots sur vous, votre style et ce que vous partagez dans le feed",
+    saveError: "Impossible d'enregistrer le profil.",
+    saving: "Enregistrement",
+    save: "Enregistrer le profil",
+  },
+  pt: {
+    section: "Editar perfil",
+    appearance: "Aparência",
+    bannerAlt: "Banner do perfil",
+    updateBanner: "Atualizar banner",
+    name: "Nome",
+    city: "Cidade",
+    experienceYears: "Experiência, anos",
+    homeWater: "Água principal ou região",
+    preferredStyles: "Estilos: spinning, feeder, barco",
+    bio: "Fale brevemente sobre você, seu estilo e o que compartilha no feed",
+    saveError: "Não foi possível salvar o perfil.",
+    saving: "Salvando",
+    save: "Salvar perfil",
+  },
+};
+
 export function ProfileEditor({ user }: ProfileEditorProps) {
   const router = useRouter();
+  const { lang } = useLanguage();
+  const t = translations[lang];
   const [form, setForm] = useState({
     name: user.name,
     bio: user.bio ?? "",
@@ -35,26 +132,29 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
   });
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
-
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
   useEffect(() => {
-    if (form.avatar) {
-      const url = URL.createObjectURL(form.avatar);
-      setAvatarPreview(url);
-      return () => URL.revokeObjectURL(url);
+    if (!form.avatar) {
+      setAvatarPreview(null);
+      return;
     }
-    setAvatarPreview(null);
+
+    const url = URL.createObjectURL(form.avatar);
+    setAvatarPreview(url);
+    return () => URL.revokeObjectURL(url);
   }, [form.avatar]);
 
   useEffect(() => {
-    if (form.banner) {
-      const url = URL.createObjectURL(form.banner);
-      setBannerPreview(url);
-      return () => URL.revokeObjectURL(url);
+    if (!form.banner) {
+      setBannerPreview(null);
+      return;
     }
-    setBannerPreview(null);
+
+    const url = URL.createObjectURL(form.banner);
+    setBannerPreview(url);
+    return () => URL.revokeObjectURL(url);
   }, [form.banner]);
 
   async function handleSave() {
@@ -91,32 +191,31 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
         router.refresh();
       });
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Не удалось сохранить профиль.");
+      setError(saveError instanceof Error ? saveError.message : t.saveError);
     }
   }
 
   return (
     <section className="glass-panel rounded-[30px] border border-border-subtle p-4">
-      <div className="mb-4 text-sm text-text-muted">Редактирование профиля</div>
+      <div className="mb-4 text-sm text-text-muted">{t.section}</div>
+      <div className="mb-4 px-2 text-sm font-semibold text-text-muted">{t.appearance}</div>
 
-      <div className="mb-4 text-sm font-semibold text-text-muted px-2">Внешний вид (кликни чтобы изменить)</div>
-
-      <label className="relative mb-6 block overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.06)] bg-[linear-gradient(135deg,#0b1520,#17324a)] cursor-pointer group">
-        {(bannerPreview || user.bannerPath) ? (
+      <label className="group relative mb-6 block cursor-pointer overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.06)] bg-[linear-gradient(135deg,#0b1520,#17324a)]">
+        {bannerPreview || user.bannerPath ? (
           <Image
-            src={withBasePath(bannerPreview || user.bannerPath || "")}
-            alt="Баннер профиля"
+            src={bannerPreview || withBasePath(user.bannerPath || "")}
+            alt={t.bannerAlt}
             width={800}
             height={300}
             className="h-32 w-full object-cover transition-transform group-hover:scale-105"
-            unoptimized={!!bannerPreview}
+            unoptimized={Boolean(bannerPreview)}
           />
         ) : (
           <div className="h-32 w-full bg-[radial-gradient(circle_at_top_right,rgba(103,232,178,0.32),transparent_35%),linear-gradient(135deg,#08131f,#183449)] transition-opacity group-hover:opacity-80" />
         )}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="flex items-center gap-2 bg-black/60 backdrop-blur rounded-full px-4 py-2 text-sm font-semibold text-white">
-            <Upload size={16} /> Обновить баннер
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur">
+            <Upload size={16} /> {t.updateBanner}
           </div>
         </div>
         <input
@@ -128,24 +227,22 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
       </label>
 
       <div className="mb-6 flex items-center gap-4">
-        <label className="relative cursor-pointer group rounded-full">
-          {(avatarPreview || user.avatarPath) ? (
+        <label className="group relative cursor-pointer rounded-full">
+          {avatarPreview || user.avatarPath ? (
             <Image
-              src={withBasePath(avatarPreview || user.avatarPath || "")}
+              src={avatarPreview || withBasePath(user.avatarPath || "")}
               alt={user.name}
               width={76}
               height={76}
-              className="h-[76px] w-[76px] rounded-full object-cover border-2 border-surface-strong shadow-lg"
-              unoptimized={!!avatarPreview}
+              className="h-[76px] w-[76px] rounded-full border-2 border-surface-strong object-cover shadow-lg"
+              unoptimized={Boolean(avatarPreview)}
             />
           ) : (
-            <div
-              className={`flex h-[76px] w-[76px] items-center justify-center rounded-full border-2 border-surface-strong shadow-lg bg-gradient-to-br ${user.avatarGradient}`}
-            >
+            <div className={`flex h-[76px] w-[76px] items-center justify-center rounded-full border-2 border-surface-strong bg-gradient-to-br ${user.avatarGradient} shadow-lg`}>
               <span className="font-display text-[26px] font-bold text-slate-950">{user.name.slice(0, 1)}</span>
             </div>
           )}
-          <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
             <Upload size={18} className="text-white" />
           </div>
           <input
@@ -156,8 +253,8 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
           />
         </label>
         <div>
-          <div className="text-xl font-bold text-text-main tracking-tight">{user.name}</div>
-          <div className="text-[15px] text-primary font-medium">@{user.handle}</div>
+          <div className="text-xl font-bold tracking-tight text-text-main">{user.name}</div>
+          <div className="text-[15px] font-medium text-primary">@{user.handle}</div>
         </div>
       </div>
 
@@ -167,20 +264,20 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
         <input
           value={form.name}
           onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-          placeholder="Имя"
+          placeholder={t.name}
           className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3 text-text-main placeholder:text-text-soft focus:border-primary/30 focus:outline-none"
         />
         <div className="grid grid-cols-2 gap-4">
           <input
             value={form.city}
             onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
-            placeholder="Город"
+            placeholder={t.city}
             className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3 text-text-main placeholder:text-text-soft focus:border-primary/30 focus:outline-none"
           />
           <input
             value={form.experienceYears}
             onChange={(event) => setForm((current) => ({ ...current, experienceYears: event.target.value }))}
-            placeholder="Стаж, лет"
+            placeholder={t.experienceYears}
             inputMode="numeric"
             className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3 text-text-main placeholder:text-text-soft focus:border-primary/30 focus:outline-none"
           />
@@ -188,23 +285,22 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
         <input
           value={form.homeWater}
           onChange={(event) => setForm((current) => ({ ...current, homeWater: event.target.value }))}
-          placeholder="Основная акватория или регион"
+          placeholder={t.homeWater}
           className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3 text-text-main placeholder:text-text-soft focus:border-primary/30 focus:outline-none"
         />
         <input
           value={form.preferredStyles}
           onChange={(event) => setForm((current) => ({ ...current, preferredStyles: event.target.value }))}
-          placeholder="Стили ловли: спиннинг, фидер, лодка"
+          placeholder={t.preferredStyles}
           className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3 text-text-main placeholder:text-text-soft focus:border-primary/30 focus:outline-none"
         />
         <textarea
           value={form.bio}
           onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
           rows={4}
-          placeholder="Коротко о себе, стиле ловли и том, чем делишься в ленте"
+          placeholder={t.bio}
           className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3 text-text-main placeholder:text-text-soft focus:border-primary/30 focus:outline-none"
         />
-
       </div>
 
       {error ? <div className="mt-4 text-sm text-danger">{error}</div> : null}
@@ -216,7 +312,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
         className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-background disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-        <span>{isPending ? "Сохраняем" : "Сохранить профиль"}</span>
+        <span>{isPending ? t.saving : t.save}</span>
       </button>
     </section>
   );

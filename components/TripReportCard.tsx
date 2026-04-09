@@ -1,6 +1,9 @@
 import Image from "next/image";
 import { CalendarDays, MapPin, Route } from "lucide-react";
+
 import { formatDateTime, tripStatusLabel } from "@/lib/format";
+import { type TranslationMap } from "@/lib/i18n";
+import { getServerLanguage } from "@/lib/i18n-server";
 
 type TripReportCardProps = {
   trip: {
@@ -28,7 +31,47 @@ type TripReportCardProps = {
   };
 };
 
-export function TripReportCard({ trip }: TripReportCardProps) {
+const translations: TranslationMap<{
+  trip: string;
+  afterTrip: string;
+  emptyReport: string;
+  newRating: string;
+}> = {
+  ru: {
+    trip: "Поездка",
+    afterTrip: "После поездки",
+    emptyReport: "Отчет пока не заполнен.",
+    newRating: "Новая",
+  },
+  en: {
+    trip: "Trip",
+    afterTrip: "After the trip",
+    emptyReport: "Report is empty for now.",
+    newRating: "New",
+  },
+  es: {
+    trip: "Viaje",
+    afterTrip: "Después del viaje",
+    emptyReport: "El informe todavía está vacío.",
+    newRating: "Nuevo",
+  },
+  fr: {
+    trip: "Sortie",
+    afterTrip: "Après la sortie",
+    emptyReport: "Le rapport n'est pas encore rempli.",
+    newRating: "Nouveau",
+  },
+  pt: {
+    trip: "Viagem",
+    afterTrip: "Depois da viagem",
+    emptyReport: "O relatório ainda não foi preenchido.",
+    newRating: "Novo",
+  },
+};
+
+export async function TripReportCard({ trip }: TripReportCardProps) {
+  const lang = await getServerLanguage();
+  const t = translations[lang];
   const image = trip.reportImagePath ?? trip.place.displayImage;
 
   return (
@@ -46,10 +89,10 @@ export function TripReportCard({ trip }: TripReportCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
           <span className="rounded-full border border-white/12 bg-black/24 px-3 py-1 text-[11px] font-semibold text-text-main backdrop-blur">
-            Поездка
+            {t.trip}
           </span>
           <span className="rounded-full border border-primary/20 bg-primary/12 px-3 py-1 text-[11px] font-semibold text-primary">
-            {tripStatusLabel(trip.status)}
+            {tripStatusLabel(trip.status, lang)}
           </span>
         </div>
         <div className="absolute inset-x-0 bottom-0 p-4">
@@ -62,7 +105,7 @@ export function TripReportCard({ trip }: TripReportCardProps) {
             </span>
             <span className="inline-flex items-center gap-1">
               <CalendarDays size={14} />
-              {formatDateTime(trip.startAt)}
+              {formatDateTime(trip.startAt, lang)}
             </span>
           </div>
         </div>
@@ -84,10 +127,10 @@ export function TripReportCard({ trip }: TripReportCardProps) {
         <div className="rounded-[22px] bg-white/4 p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-text-main">
             <Route size={16} className="text-primary" />
-            После поездки
+            {t.afterTrip}
           </div>
           <p className="mt-2 text-[15px] leading-6 text-text-main">
-            {trip.summary ?? trip.notes ?? "Отчет пока не заполнен."}
+            {trip.summary ?? trip.notes ?? t.emptyReport}
           </p>
         </div>
 

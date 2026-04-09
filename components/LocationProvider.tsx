@@ -3,12 +3,15 @@
 import {
   createContext,
   startTransition,
+  useContext,
   useEffect,
   useEffectEvent,
-  useContext,
   useState,
 } from "react";
+
+import { useLanguage } from "@/components/LanguageProvider";
 import { apiPath } from "@/lib/app-paths";
+import { type TranslationMap } from "@/lib/i18n";
 import { LOCATION_STORAGE_KEY, parseStoredLocation, type ViewerLocation } from "@/lib/location";
 
 type LocationContextValue = {
@@ -18,6 +21,14 @@ type LocationContextValue = {
   refreshLocation: () => void;
 };
 
+const translations: TranslationMap<{ error: string }> = {
+  ru: { error: "Не удалось определить местоположение." },
+  en: { error: "Could not resolve your location." },
+  es: { error: "No se pudo determinar tu ubicación." },
+  fr: { error: "Impossible de déterminer votre position." },
+  pt: { error: "Não foi possível determinar sua localização." },
+};
+
 const LocationContext = createContext<LocationContextValue | null>(null);
 
 function saveLocation(location: ViewerLocation) {
@@ -25,6 +36,7 @@ function saveLocation(location: ViewerLocation) {
 }
 
 export function LocationProvider({ children }: { children: React.ReactNode }) {
+  const { lang } = useLanguage();
   const [location, setLocation] = useState<ViewerLocation | null>(null);
   const [status, setStatus] = useState<LocationContextValue["status"]>("idle");
   const [error, setError] = useState("");
@@ -55,12 +67,13 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       });
     } catch {
       setStatus("error");
-      setError("Не удалось определить местоположение.");
+      setError(translations[lang].error);
     }
   });
 
   useEffect(() => {
     const stored = parseStoredLocation(localStorage.getItem(LOCATION_STORAGE_KEY));
+
     if (stored) {
       setLocation(stored);
       setStatus("ready");
@@ -79,21 +92,29 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) {
           return;
         }
-        
+
         let city: string | undefined;
         let region: string | undefined;
         let country: string | undefined;
-        
+
         try {
-           const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=ru`);
-           if (res.ok) {
-              const data = await res.json();
-              city = data.city || data.locality;
-              region = data.principalSubdivision;
-              country = data.countryName;
-           }
+          const res = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=${lang}`,
+          );
+
+          if (res.ok) {
+            const data = (await res.json()) as {
+              city?: string;
+              locality?: string;
+              principalSubdivision?: string;
+              countryName?: string;
+            };
+            city = data.city || data.locality;
+            region = data.principalSubdivision;
+            country = data.countryName;
+          }
         } catch {
-           // ignore
+          // Ignore reverse geocode errors and keep coordinates.
         }
 
         applyLocation({
@@ -107,11 +128,9 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         });
       },
       () => {
-        if (cancelled) {
-          return;
+        if (!cancelled) {
+          void resolveFromIp();
         }
-
-        void resolveFromIp();
       },
       {
         enableHighAccuracy: true,
@@ -123,7 +142,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [refreshTick]);
+  }, [lang, refreshTick]);
 
   const value: LocationContextValue = {
     location,
@@ -136,7 +155,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     },
   };
 
-  return <LocationContext value={value}>{children}</LocationContext>;
+  return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
 }
 
 export function useLocation() {

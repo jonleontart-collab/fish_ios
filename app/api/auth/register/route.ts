@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { hashPassword } from "@/lib/auth";
-import { APP_COOKIE_PATH } from "@/lib/app-paths";
+import { getLanguageCookieOptions, getSessionCookieOptions } from "@/lib/auth-cookies";
+import { LANGUAGE_COOKIE_NAME, normalizeLanguage, type LanguageCode } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 
@@ -17,22 +18,64 @@ type RegisterPayload = {
   lang?: string;
 };
 
-export async function POST(req: Request) {
-  try {
-    const { firstName, lastName, handle, birthDate, password, lang = "ru" } =
-      (await req.json()) as RegisterPayload;
+const errors: Record<
+  LanguageCode,
+  Record<"missing" | "passwordShort" | "taken" | "birthDate" | "generic", string>
+> = {
+  ru: {
+    missing: "Все поля регистрации обязательны.",
+    passwordShort: "Пароль должен быть не короче 6 символов.",
+    taken: "Этот никнейм уже занят.",
+    birthDate: "Некорректная дата рождения.",
+    generic: "Не удалось создать пользователя.",
+  },
+  en: {
+    missing: "All registration fields are required.",
+    passwordShort: "Password must be at least 6 characters long.",
+    taken: "This nickname is already taken.",
+    birthDate: "Invalid birth date.",
+    generic: "Could not create the user.",
+  },
+  es: {
+    missing: "Todos los campos de registro son obligatorios.",
+    passwordShort: "La contraseña debe tener al menos 6 caracteres.",
+    taken: "Este apodo ya está ocupado.",
+    birthDate: "Fecha de nacimiento no válida.",
+    generic: "No se pudo crear el usuario.",
+  },
+  fr: {
+    missing: "Tous les champs d'inscription sont obligatoires.",
+    passwordShort: "Le mot de passe doit contenir au moins 6 caractères.",
+    taken: "Ce pseudo est déjà pris.",
+    birthDate: "Date de naissance invalide.",
+    generic: "Impossible de créer l'utilisateur.",
+  },
+  pt: {
+    missing: "Todos os campos de cadastro são obrigatórios.",
+    passwordShort: "A senha deve ter pelo menos 6 caracteres.",
+    taken: "Este apelido já está em uso.",
+    birthDate: "Data de nascimento inválida.",
+    generic: "Não foi possível criar o usuário.",
+  },
+};
 
+export async function POST(req: Request) {
+  const cookieStore = await cookies();
+
+  try {
+    const { firstName, lastName, handle, birthDate, password, lang } = (await req.json()) as RegisterPayload;
+    const language = normalizeLanguage(lang);
     const safeFirstName = firstName?.trim() ?? "";
     const safeLastName = lastName?.trim() ?? "";
     const safeHandle = slugify(handle?.trim() ?? "");
     const safePassword = password?.trim() ?? "";
 
     if (!safeFirstName || !safeLastName || !safeHandle || !birthDate || !safePassword) {
-      return NextResponse.json({ error: "Все поля регистрации обязательны." }, { status: 400 });
+      return NextResponse.json({ error: errors[language].missing }, { status: 400 });
     }
 
     if (safePassword.length < 6) {
-      return NextResponse.json({ error: "Пароль должен быть не короче 6 символов." }, { status: 400 });
+      return NextResponse.json({ error: errors[language].passwordShort }, { status: 400 });
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -41,12 +84,13 @@ export async function POST(req: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json({ error: "Этот никнейм уже занят." }, { status: 409 });
+      return NextResponse.json({ error: errors[language].taken }, { status: 409 });
     }
 
     const parsedBirthDate = new Date(birthDate);
+
     if (Number.isNaN(parsedBirthDate.getTime())) {
-      return NextResponse.json({ error: "Некорректная дата рождения." }, { status: 400 });
+      return NextResponse.json({ error: errors[language].birthDate }, { status: 400 });
     }
 
     const user = await prisma.user.create({
@@ -62,19 +106,13 @@ export async function POST(req: Request) {
       },
     });
 
-    const cookieStore = await cookies();
-    cookieStore.set("fishflow_uid", user.id, {
-      path: APP_COOKIE_PATH,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      httpOnly: true,
-      maxAge: 60 * 60 * 24 * 365,
-    });
-    cookieStore.set("googtrans", `/ru/${lang}`, { path: "/" });
+    cookieStore.set("fishflow_uid", user.id, getSessionCookieOptions(req));
+    cookieStore.set(LANGUAGE_COOKIE_NAME, language, getLanguageCookieOptions(req));
 
     return NextResponse.json({ user });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Не удалось создать пользователя." }, { status: 500 });
+    const language = normalizeLanguage(cookieStore.get(LANGUAGE_COOKIE_NAME)?.value);
+    return NextResponse.json({ error: errors[language].generic }, { status: 500 });
   }
 }

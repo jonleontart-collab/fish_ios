@@ -4,8 +4,64 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Loader2 } from "lucide-react";
 
+import { useLanguage } from "@/components/LanguageProvider";
+import { apiPath } from "@/lib/app-paths";
+import type { TranslationMap } from "@/lib/i18n";
+
+const translations: TranslationMap<{
+  select: string;
+  uploadError: string;
+  title: string;
+  caption: string;
+  uploading: string;
+  upload: string;
+}> = {
+  ru: {
+    select: "Сначала выбери фотографию.",
+    uploadError: "Не удалось прикрепить фото к точке.",
+    title: "Добавить фото к месту",
+    caption: "Подпись к фотографии",
+    uploading: "Загружаем",
+    upload: "Прикрепить фото",
+  },
+  en: {
+    select: "Select a photo first.",
+    uploadError: "Could not attach the photo to this place.",
+    title: "Add a place photo",
+    caption: "Photo caption",
+    uploading: "Uploading",
+    upload: "Attach photo",
+  },
+  es: {
+    select: "Primero selecciona una foto.",
+    uploadError: "No se pudo adjuntar la foto al lugar.",
+    title: "Añadir foto del lugar",
+    caption: "Texto de la foto",
+    uploading: "Subiendo",
+    upload: "Adjuntar foto",
+  },
+  fr: {
+    select: "Choisissez d'abord une photo.",
+    uploadError: "Impossible d'ajouter la photo à ce lieu.",
+    title: "Ajouter une photo du spot",
+    caption: "Légende de la photo",
+    uploading: "Envoi",
+    upload: "Ajouter la photo",
+  },
+  pt: {
+    select: "Selecione uma foto primeiro.",
+    uploadError: "Não foi possível anexar a foto ao local.",
+    title: "Adicionar foto do local",
+    caption: "Legenda da foto",
+    uploading: "Enviando",
+    upload: "Anexar foto",
+  },
+};
+
 export function PlacePhotoUploader({ placeId }: { placeId: string }) {
   const router = useRouter();
+  const { lang } = useLanguage();
+  const t = translations[lang];
   const [caption, setCaption] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
@@ -13,7 +69,7 @@ export function PlacePhotoUploader({ placeId }: { placeId: string }) {
 
   async function handleUpload() {
     if (!file) {
-      setError("Сначала выбери фотографию.");
+      setError(t.select);
       return;
     }
 
@@ -24,7 +80,7 @@ export function PlacePhotoUploader({ placeId }: { placeId: string }) {
       payload.append("image", file);
       payload.append("caption", caption.trim());
 
-      const response = await fetch(`/api/places/${placeId}/photos`, {
+      const response = await fetch(apiPath(`/api/places/${placeId}/photos`), {
         method: "POST",
         body: payload,
       });
@@ -39,7 +95,7 @@ export function PlacePhotoUploader({ placeId }: { placeId: string }) {
         router.refresh();
       });
     } catch {
-      setError("Не удалось прикрепить фото к точке.");
+      setError(t.uploadError);
     }
   }
 
@@ -47,7 +103,7 @@ export function PlacePhotoUploader({ placeId }: { placeId: string }) {
     <div className="space-y-3 rounded-[24px] border border-border-subtle bg-white/3 p-4">
       <div className="flex items-center gap-2 text-sm font-semibold text-text-main">
         <Camera size={16} className="text-primary" />
-        Добавить фото к месту
+        {t.title}
       </div>
       <input
         type="file"
@@ -58,7 +114,7 @@ export function PlacePhotoUploader({ placeId }: { placeId: string }) {
       <input
         value={caption}
         onChange={(event) => setCaption(event.target.value)}
-        placeholder="Подпись к фотографии"
+        placeholder={t.caption}
         className="w-full rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3 text-sm text-text-main placeholder:text-text-soft focus:border-primary/30 focus:outline-none"
       />
       {error ? <div className="text-sm text-danger">{error}</div> : null}
@@ -69,7 +125,7 @@ export function PlacePhotoUploader({ placeId }: { placeId: string }) {
         className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-background disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
-        <span>{isPending ? "Загружаем" : "Прикрепить фото"}</span>
+        <span>{isPending ? t.uploading : t.upload}</span>
       </button>
     </div>
   );

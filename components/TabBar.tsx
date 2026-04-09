@@ -1,16 +1,55 @@
 'use client';
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { CirclePlus, House, Layers3, MapPinned, MessagesSquare } from "lucide-react";
+import { usePathname } from "next/navigation";
 
-const items = [
-  { href: "/", label: "Главная", icon: House },
-  { href: "/feed", label: "Лента", icon: Layers3 },
-  { href: "/add", label: "Улов", icon: CirclePlus, center: true },
-  { href: "/explore", label: "Места", icon: MapPinned },
-  { href: "/chats", label: "Чаты", icon: MessagesSquare },
-];
+import { useLanguage } from "@/components/LanguageProvider";
+import type { TranslationMap } from "@/lib/i18n";
+
+const labels: TranslationMap<{
+  home: string;
+  feed: string;
+  add: string;
+  explore: string;
+  chats: string;
+}> = {
+  ru: {
+    home: "Главная",
+    feed: "Лента",
+    add: "Улов",
+    explore: "Места",
+    chats: "Чаты",
+  },
+  en: {
+    home: "Home",
+    feed: "Feed",
+    add: "Catch",
+    explore: "Places",
+    chats: "Chats",
+  },
+  es: {
+    home: "Inicio",
+    feed: "Feed",
+    add: "Captura",
+    explore: "Lugares",
+    chats: "Chats",
+  },
+  fr: {
+    home: "Accueil",
+    feed: "Feed",
+    add: "Prise",
+    explore: "Lieux",
+    chats: "Chats",
+  },
+  pt: {
+    home: "Início",
+    feed: "Feed",
+    add: "Captura",
+    explore: "Locais",
+    chats: "Chats",
+  },
+};
 
 function isItemActive(pathname: string, href: string) {
   if (href === "/") {
@@ -26,6 +65,15 @@ function isItemActive(pathname: string, href: string) {
 
 export default function TabBar() {
   const pathname = usePathname();
+  const { lang } = useLanguage();
+  const t = labels[lang];
+  const items = [
+    { href: "/", label: t.home, icon: House },
+    { href: "/feed", label: t.feed, icon: Layers3 },
+    { href: "/add", label: t.add, icon: CirclePlus, center: true },
+    { href: "/explore", label: t.explore, icon: MapPinned },
+    { href: "/chats", label: t.chats, icon: MessagesSquare },
+  ];
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 pb-safe">

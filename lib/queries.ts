@@ -1,6 +1,5 @@
 import { subDays } from "date-fns";
 import { prisma } from "@/lib/prisma";
-import { CURRENT_USER_HANDLE } from "@/lib/constants";
 import { splitPipeList } from "@/lib/format";
 
 const REAL_PLACE_FILTER = {
