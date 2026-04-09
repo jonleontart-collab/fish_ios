@@ -1,10 +1,15 @@
+import { cookies } from "next/headers";
 import { z } from "zod";
+
+import { getLanguageCookieOptions } from "@/lib/auth-cookies";
+import { LANGUAGE_COOKIE_NAME, normalizeLanguage } from "@/lib/i18n";
 import { getCurrentUser } from "@/lib/queries";
 import { prisma } from "@/lib/prisma";
 import { saveImageFile } from "@/lib/storage";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2).max(80),
+  preferredLanguage: z.string().trim().min(2).max(10).optional(),
   bio: z.string().trim().max(280).optional(),
   city: z.string().trim().max(80).optional(),
   experienceYears: z.preprocess(
@@ -30,6 +35,7 @@ export async function PATCH(request: Request) {
   const formData = await request.formData();
   const parsed = profileSchema.safeParse({
     name: formData.get("name"),
+    preferredLanguage: formData.get("preferredLanguage"),
     bio: formData.get("bio"),
     city: formData.get("city"),
     experienceYears: formData.get("experienceYears"),
@@ -48,11 +54,13 @@ export async function PATCH(request: Request) {
   const banner = formData.get("banner");
   const avatarFile = avatar instanceof File && avatar.size > 0 ? await saveImageFile(avatar) : null;
   const bannerFile = banner instanceof File && banner.size > 0 ? await saveImageFile(banner) : null;
+  const preferredLanguage = normalizeLanguage(parsed.data.preferredLanguage);
 
   const updated = await prisma.user.update({
     where: { id: user.id },
     data: {
       name: parsed.data.name,
+      preferredLanguage,
       bio: parsed.data.bio || null,
       city: parsed.data.city || null,
       experienceYears: parsed.data.experienceYears ?? null,
@@ -65,6 +73,7 @@ export async function PATCH(request: Request) {
       id: true,
       name: true,
       handle: true,
+      preferredLanguage: true,
       bio: true,
       city: true,
       experienceYears: true,
@@ -75,6 +84,9 @@ export async function PATCH(request: Request) {
       bannerPath: true,
     },
   });
+
+  const cookieStore = await cookies();
+  cookieStore.set(LANGUAGE_COOKIE_NAME, preferredLanguage, getLanguageCookieOptions(request));
 
   return Response.json(updated);
 }

@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, Compass, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { CatchCard } from "@/components/CatchCard";
+import { HomeFishingEventsWidget } from "@/components/HomeFishingEventsWidget";
 import { HomeHero } from "@/components/HomeHero";
+import { HomeTripsWidget } from "@/components/HomeTripsWidget";
 import { withBasePath } from "@/lib/app-paths";
-import { formatDateTime } from "@/lib/format";
 import { type TranslationMap } from "@/lib/i18n";
 import { getServerLanguage } from "@/lib/i18n-server";
 import { getDashboardData } from "@/lib/queries";
@@ -13,66 +14,36 @@ import { getDashboardData } from "@/lib/queries";
 export const dynamic = "force-dynamic";
 
 const translations: TranslationMap<{
-  mapTitle: string;
-  nearbyPlaces: (count: number) => string;
-  newPlaces: string;
-  tripsTitle: string;
-  planTrip: string;
   addCatch: string;
   activityFeed: string;
   emptyFeedTitle: string;
   emptyFeedDescription: string;
 }> = {
   ru: {
-    mapTitle: "Карта мест",
-    nearbyPlaces: (count) => `${count} точек рядом`,
-    newPlaces: "Новые места",
-    tripsTitle: "Выезды",
-    planTrip: "Спланировать",
     addCatch: "Добавить улов",
     activityFeed: "Лента активности",
-    emptyFeedTitle: "Лента пока пуста",
+    emptyFeedTitle: "Лента пока пустая",
     emptyFeedDescription: "Подпишись на других рыбаков или добавь свой первый улов.",
   },
   en: {
-    mapTitle: "Places map",
-    nearbyPlaces: (count) => `${count} spots nearby`,
-    newPlaces: "New places",
-    tripsTitle: "Trips",
-    planTrip: "Plan one",
     addCatch: "Add catch",
     activityFeed: "Activity feed",
     emptyFeedTitle: "The feed is empty",
     emptyFeedDescription: "Follow other anglers or add your first catch.",
   },
   es: {
-    mapTitle: "Mapa de lugares",
-    nearbyPlaces: (count) => `${count} lugares cerca`,
-    newPlaces: "Nuevos lugares",
-    tripsTitle: "Salidas",
-    planTrip: "Planificar",
     addCatch: "Añadir captura",
     activityFeed: "Actividad",
     emptyFeedTitle: "El feed está vacío",
     emptyFeedDescription: "Sigue a otros pescadores o añade tu primera captura.",
   },
   fr: {
-    mapTitle: "Carte des spots",
-    nearbyPlaces: (count) => `${count} spots à proximité`,
-    newPlaces: "Nouveaux spots",
-    tripsTitle: "Sorties",
-    planTrip: "Planifier",
     addCatch: "Ajouter une prise",
     activityFeed: "Activité",
     emptyFeedTitle: "Le feed est vide",
     emptyFeedDescription: "Suivez d'autres pêcheurs ou ajoutez votre première prise.",
   },
   pt: {
-    mapTitle: "Mapa de locais",
-    nearbyPlaces: (count) => `${count} pontos por perto`,
-    newPlaces: "Novos locais",
-    tripsTitle: "Saídas",
-    planTrip: "Planejar",
     addCatch: "Adicionar captura",
     activityFeed: "Feed de atividade",
     emptyFeedTitle: "O feed está vazio",
@@ -84,7 +55,6 @@ export default async function Home() {
   const lang = await getServerLanguage();
   const t = translations[lang];
   const dashboard = await getDashboardData();
-  const nextTrip = dashboard.upcomingTrips[0];
 
   return (
     <div className="pb-24 pt-safe sm:pt-6">
@@ -111,39 +81,20 @@ export default async function Home() {
         </Link>
       </header>
 
-      <div className="px-4 sm:px-0">
+      <div className="space-y-5 px-4 sm:px-0">
         <HomeHero
           lang={lang}
           userName={dashboard.user.name}
           savedPlacesCount={dashboard.stats.placesCount}
-          pendingShoppingCount={dashboard.stats.pendingShoppingCount}
-          upcomingTripsCount={dashboard.stats.upcomingTripsCount}
         />
-      </div>
 
-      <div className="mt-5 px-4 sm:px-0">
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/explore" className="bento-card group p-4 transition-transform active:scale-95">
-            <Compass className="mb-2.5 text-primary" size={24} />
-            <div className="font-semibold text-text-main transition-colors group-hover:text-primary">{t.mapTitle}</div>
-            <div className="mt-1 text-xs leading-relaxed text-text-muted">
-              {dashboard.nearbyPlaces.length > 0 ? t.nearbyPlaces(dashboard.nearbyPlaces.length) : t.newPlaces}
-            </div>
-          </Link>
+        <HomeTripsWidget lang={lang} trips={dashboard.upcomingTrips} />
+        <HomeFishingEventsWidget />
 
-          <Link href="/trips" className="bento-card group relative overflow-hidden p-4 transition-transform active:scale-95">
-            <CalendarDays className="relative z-10 mb-2.5 text-accent" size={24} />
-            <div className="relative z-10 font-semibold text-text-main transition-colors group-hover:text-accent">{t.tripsTitle}</div>
-            <div className="relative z-10 mt-1 truncate text-xs leading-relaxed text-text-muted">
-              {nextTrip ? formatDateTime(nextTrip.startAt, lang) : t.planTrip}
-            </div>
-            <div className="pointer-events-none absolute bottom-[-1rem] right-[-0.5rem] text-accent/5">
-              <CalendarDays size={80} strokeWidth={1} />
-            </div>
-          </Link>
-        </div>
-
-        <Link href="/add" className="bento-card mt-3 flex items-center justify-center gap-2 border-primary/20 bg-primary/10 p-4 text-primary transition-colors hover:bg-primary/15">
+        <Link
+          href="/add"
+          className="bento-card flex items-center justify-center gap-2 border-primary/20 bg-primary/10 p-4 text-primary transition-colors hover:bg-primary/15"
+        >
           <Plus size={20} />
           <span className="font-semibold">{t.addCatch}</span>
         </Link>
@@ -162,7 +113,7 @@ export default async function Home() {
           <div className="px-4 sm:px-0">
             <div className="bento-card border-dashed p-6 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/5">
-                <Compass className="text-text-muted" size={24} />
+                <Plus className="text-text-muted" size={24} />
               </div>
               <div className="mb-1 font-semibold text-text-main">{t.emptyFeedTitle}</div>
               <p className="mx-auto max-w-[250px] text-sm text-text-muted">{t.emptyFeedDescription}</p>

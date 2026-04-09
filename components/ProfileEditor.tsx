@@ -7,12 +7,13 @@ import { Loader2, Save, Upload } from "lucide-react";
 
 import { useLanguage } from "@/components/LanguageProvider";
 import { apiPath, withBasePath } from "@/lib/app-paths";
-import type { TranslationMap } from "@/lib/i18n";
+import { languageOptions, type TranslationMap } from "@/lib/i18n";
 
 type ProfileEditorProps = {
   user: {
     name: string;
     handle: string;
+    preferredLanguage: string;
     bio: string | null;
     city: string | null;
     experienceYears: number | null;
@@ -27,6 +28,7 @@ type ProfileEditorProps = {
 const translations: TranslationMap<{
   section: string;
   appearance: string;
+  interfaceLanguage: string;
   bannerAlt: string;
   updateBanner: string;
   name: string;
@@ -42,6 +44,7 @@ const translations: TranslationMap<{
   ru: {
     section: "Редактирование профиля",
     appearance: "Внешний вид",
+    interfaceLanguage: "Язык интерфейса",
     bannerAlt: "Баннер профиля",
     updateBanner: "Обновить баннер",
     name: "Имя",
@@ -57,6 +60,7 @@ const translations: TranslationMap<{
   en: {
     section: "Edit profile",
     appearance: "Appearance",
+    interfaceLanguage: "Interface language",
     bannerAlt: "Profile banner",
     updateBanner: "Update banner",
     name: "Name",
@@ -72,6 +76,7 @@ const translations: TranslationMap<{
   es: {
     section: "Editar perfil",
     appearance: "Apariencia",
+    interfaceLanguage: "Idioma de la interfaz",
     bannerAlt: "Banner del perfil",
     updateBanner: "Actualizar banner",
     name: "Nombre",
@@ -87,6 +92,7 @@ const translations: TranslationMap<{
   fr: {
     section: "Modifier le profil",
     appearance: "Apparence",
+    interfaceLanguage: "Langue de l'interface",
     bannerAlt: "Bannière du profil",
     updateBanner: "Mettre à jour la bannière",
     name: "Nom",
@@ -102,6 +108,7 @@ const translations: TranslationMap<{
   pt: {
     section: "Editar perfil",
     appearance: "Aparência",
+    interfaceLanguage: "Idioma da interface",
     bannerAlt: "Banner do perfil",
     updateBanner: "Atualizar banner",
     name: "Nome",
@@ -118,10 +125,11 @@ const translations: TranslationMap<{
 
 export function ProfileEditor({ user }: ProfileEditorProps) {
   const router = useRouter();
-  const { lang } = useLanguage();
+  const { lang, setLanguage } = useLanguage();
   const t = translations[lang];
   const [form, setForm] = useState({
     name: user.name,
+    preferredLanguage: user.preferredLanguage,
     bio: user.bio ?? "",
     city: user.city ?? "",
     experienceYears: user.experienceYears ? String(user.experienceYears) : "",
@@ -163,6 +171,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
     try {
       const payload = new FormData();
       payload.append("name", form.name.trim());
+      payload.append("preferredLanguage", form.preferredLanguage);
       payload.append("bio", form.bio.trim());
       payload.append("city", form.city.trim());
       payload.append("experienceYears", form.experienceYears.trim());
@@ -187,6 +196,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
         throw new Error(data?.error ?? "save failed");
       }
 
+      setLanguage(form.preferredLanguage, { refresh: false });
       startTransition(() => {
         router.refresh();
       });
@@ -261,6 +271,23 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
       <div className="mb-6 h-px w-full bg-[rgba(255,255,255,0.06)]" />
 
       <div className="grid gap-4">
+        <div className="rounded-[18px] border border-border-subtle bg-surface-soft px-4 py-3">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+            {t.interfaceLanguage}
+          </div>
+          <select
+            value={form.preferredLanguage}
+            onChange={(event) => setForm((current) => ({ ...current, preferredLanguage: event.target.value }))}
+            className="w-full bg-transparent text-text-main focus:outline-none"
+          >
+            {languageOptions.map((option) => (
+              <option key={option.code} value={option.code} className="bg-background text-text-main">
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <input
           value={form.name}
           onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}

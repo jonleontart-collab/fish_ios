@@ -2,14 +2,121 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, ImagePlus, MapPin, Star, Waves } from "lucide-react";
+
 import { CatchCard } from "@/components/CatchCard";
 import { PlacePhotoUploader } from "@/components/PlacePhotoUploader";
 import { withBasePath } from "@/lib/app-paths";
 import { getSpeciesBadge } from "@/lib/assets";
 import { placeSourceLabel, placeTypeLabel } from "@/lib/format";
+import { type TranslationMap } from "@/lib/i18n";
+import { getServerLanguage } from "@/lib/i18n-server";
 import { getPlaceDetails } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+
+const translations: TranslationMap<{
+  back: string;
+  noPhotos: string;
+  photosCount: (count: number) => string;
+  depth: string;
+  bestMonths: string;
+  fish: string;
+  amenities: string;
+  sourceLink: string;
+  photoGallery: string;
+  userPhotoCaption: string;
+  addCatch: string;
+  discuss: string;
+  placeFeed: string;
+  freshCatches: string;
+  variableDepth: string;
+}> = {
+  ru: {
+    back: "Назад к карте",
+    noPhotos: "Пока нет фото для этого места. Добавьте первым!",
+    photosCount: (count) => `${count} фото места`,
+    depth: "Глубина",
+    bestMonths: "Лучшие месяцы",
+    fish: "Рыба",
+    amenities: "Инфраструктура",
+    sourceLink: "Открыть источник с фото и отзывами",
+    photoGallery: "Фотографии точки",
+    userPhotoCaption: "Пользователь добавил фото места",
+    addCatch: "Добавить улов",
+    discuss: "Обсудить в чатах",
+    placeFeed: "По этому месту",
+    freshCatches: "Свежие уловы",
+    variableDepth: "переменная",
+  },
+  en: {
+    back: "Back to map",
+    noPhotos: "There are no photos for this place yet. Be the first to add one.",
+    photosCount: (count) => `${count} place photos`,
+    depth: "Depth",
+    bestMonths: "Best months",
+    fish: "Fish species",
+    amenities: "Amenities",
+    sourceLink: "Open source with photos and reviews",
+    photoGallery: "Spot photos",
+    userPhotoCaption: "A user added a photo of this place",
+    addCatch: "Add catch",
+    discuss: "Discuss in chats",
+    placeFeed: "For this place",
+    freshCatches: "Fresh catches",
+    variableDepth: "variable",
+  },
+  es: {
+    back: "Volver al mapa",
+    noPhotos: "Todavía no hay fotos de este lugar. Sé el primero en añadir una.",
+    photosCount: (count) => `${count} fotos del lugar`,
+    depth: "Profundidad",
+    bestMonths: "Mejores meses",
+    fish: "Peces",
+    amenities: "Infraestructura",
+    sourceLink: "Abrir fuente con fotos y reseñas",
+    photoGallery: "Fotos del punto",
+    userPhotoCaption: "Un usuario añadió una foto del lugar",
+    addCatch: "Añadir captura",
+    discuss: "Hablar en chats",
+    placeFeed: "Para este lugar",
+    freshCatches: "Capturas recientes",
+    variableDepth: "variable",
+  },
+  fr: {
+    back: "Retour à la carte",
+    noPhotos: "Aucune photo pour ce spot pour le moment. Ajoutez-en une en premier.",
+    photosCount: (count) => `${count} photos du spot`,
+    depth: "Profondeur",
+    bestMonths: "Meilleurs mois",
+    fish: "Poissons",
+    amenities: "Infrastructure",
+    sourceLink: "Ouvrir la source avec photos et avis",
+    photoGallery: "Photos du spot",
+    userPhotoCaption: "Un utilisateur a ajouté une photo du spot",
+    addCatch: "Ajouter une prise",
+    discuss: "Discuter dans les chats",
+    placeFeed: "Pour ce spot",
+    freshCatches: "Prises récentes",
+    variableDepth: "variable",
+  },
+  pt: {
+    back: "Voltar ao mapa",
+    noPhotos: "Ainda não há fotos deste local. Seja o primeiro a adicionar uma.",
+    photosCount: (count) => `${count} fotos do local`,
+    depth: "Profundidade",
+    bestMonths: "Melhores meses",
+    fish: "Peixes",
+    amenities: "Infraestrutura",
+    sourceLink: "Abrir fonte com fotos e avaliações",
+    photoGallery: "Fotos do ponto",
+    userPhotoCaption: "Um usuário adicionou uma foto do local",
+    addCatch: "Adicionar captura",
+    discuss: "Discutir nos chats",
+    placeFeed: "Sobre este local",
+    freshCatches: "Capturas recentes",
+    variableDepth: "variável",
+  },
+};
 
 export default async function PlacePage({
   params,
@@ -17,6 +124,8 @@ export default async function PlacePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const lang = await getServerLanguage();
+  const t = translations[lang];
   const place = await getPlaceDetails(slug);
 
   if (!place) {
@@ -27,7 +136,7 @@ export default async function PlacePage({
     <div className="space-y-5 px-4 pb-8 pt-safe">
       <Link href="/explore" className="inline-flex items-center gap-2 text-sm font-semibold text-text-muted">
         <ArrowLeft size={16} />
-        Назад к карте
+        {t.back}
       </Link>
 
       <section className="glass-panel overflow-hidden rounded-[32px] border border-border-subtle">
@@ -43,22 +152,20 @@ export default async function PlacePage({
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
               <ImagePlus size={48} className="mb-3 text-primary/40" />
-              <div className="text-base font-medium text-primary/50 text-balance">
-                Пока нет фото для этого места. <br /> Добавьте первым!
-              </div>
+              <div className="text-base font-medium text-primary/50 text-balance">{t.noPhotos}</div>
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
           <div className="absolute inset-x-0 top-0 flex flex-wrap gap-2 p-5">
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-text-main">
-              {placeTypeLabel(place.type)}
+              {placeTypeLabel(place.type, lang)}
             </span>
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-text-main">
-              {placeSourceLabel(place.source)}
+              {placeSourceLabel(place.source, lang)}
             </span>
             {place.distanceKm ? (
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-text-main">
-                {place.distanceKm} км
+                {place.distanceKm} km
               </span>
             ) : null}
           </div>
@@ -76,7 +183,7 @@ export default async function PlacePage({
                   <Star size={14} className="fill-warning text-warning" />
                   {place.rating > 0 ? place.rating.toFixed(1) : "new"}
                 </div>
-                <div className="text-xs text-text-muted">{place.photos.length} фото места</div>
+                <div className="text-xs text-text-muted">{t.photosCount(place.photos.length)}</div>
               </div>
             </div>
           </div>
@@ -90,14 +197,14 @@ export default async function PlacePage({
           <div className="rounded-[24px] bg-white/4 p-4">
             <div className="flex items-center gap-2 text-sm text-text-muted">
               <Waves size={16} />
-              Глубина
+              {t.depth}
             </div>
             <div className="mt-2 text-lg font-semibold text-text-main">
-              {place.depthMeters ? `${place.depthMeters.toFixed(1)} м` : "переменная"}
+              {place.depthMeters ? `${place.depthMeters.toFixed(1)} m` : t.variableDepth}
             </div>
           </div>
           <div className="rounded-[24px] bg-white/4 p-4">
-            <div className="text-sm text-text-muted">Лучшие месяцы</div>
+            <div className="text-sm text-text-muted">{t.bestMonths}</div>
             <div className="mt-2 text-lg font-semibold text-text-main">
               {place.bestMonthsList.slice(0, 2).join(" · ")}
             </div>
@@ -106,7 +213,7 @@ export default async function PlacePage({
 
         <div className="mt-5 space-y-4">
           <div>
-            <div className="mb-2 text-sm text-text-muted">Рыба</div>
+            <div className="mb-2 text-sm text-text-muted">{t.fish}</div>
             <div className="flex flex-wrap gap-2">
               {place.fishSpeciesList.map((item) => (
                 <span
@@ -127,7 +234,7 @@ export default async function PlacePage({
           </div>
 
           <div>
-            <div className="mb-2 text-sm text-text-muted">Инфраструктура</div>
+            <div className="mb-2 text-sm text-text-muted">{t.amenities}</div>
             <div className="flex flex-wrap gap-2">
               {place.amenitiesList.map((item) => (
                 <span key={item} className="rounded-full bg-white/6 px-3 py-1 text-xs font-medium text-text-main">
@@ -144,7 +251,7 @@ export default async function PlacePage({
               rel="noreferrer"
               className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
             >
-              Открыть источник с фото и отзывами
+              {t.sourceLink}
               <ExternalLink size={16} />
             </Link>
           ) : null}
@@ -157,7 +264,7 @@ export default async function PlacePage({
         <section className="glass-panel rounded-[28px] border border-border-subtle p-4">
           <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-text-main">
             <ImagePlus size={16} className="text-primary" />
-            Фотографии точки
+            {t.photoGallery}
           </div>
           <div className="grid grid-cols-2 gap-3">
             {place.photos.map((photo) => (
@@ -173,9 +280,7 @@ export default async function PlacePage({
                 </div>
                 <div className="space-y-1 p-3">
                   <div className="text-sm font-semibold text-text-main">{photo.user.name}</div>
-                  <div className="text-xs leading-5 text-text-muted">
-                    {photo.caption ?? "Пользователь добавил фото места"}
-                  </div>
+                  <div className="text-xs leading-5 text-text-muted">{photo.caption ?? t.userPhotoCaption}</div>
                 </div>
               </div>
             ))}
@@ -188,20 +293,20 @@ export default async function PlacePage({
           href="/add"
           className="flex-1 rounded-[20px] bg-primary px-4 py-4 text-center font-semibold text-background"
         >
-          Добавить улов
+          {t.addCatch}
         </Link>
         <Link
           href="/chats"
           className="glass-panel flex-1 rounded-[20px] border border-border-subtle px-4 py-4 text-center font-semibold text-text-main"
         >
-          Обсудить в чатах
+          {t.discuss}
         </Link>
       </div>
 
       <section className="space-y-4">
         <div>
-          <div className="text-sm text-text-muted">По этому месту</div>
-          <h2 className="font-display text-2xl font-semibold text-text-main">Свежие уловы</h2>
+          <div className="text-sm text-text-muted">{t.placeFeed}</div>
+          <h2 className="font-display text-2xl font-semibold text-text-main">{t.freshCatches}</h2>
         </div>
 
         <div className="space-y-4">

@@ -13,7 +13,7 @@ import {
 
 type LanguageContextValue = {
   lang: LanguageCode;
-  setLanguage: (nextLanguage: string) => void;
+  setLanguage: (nextLanguage: string, options?: { refresh?: boolean }) => void;
   languages: typeof languageOptions;
 };
 
@@ -38,10 +38,15 @@ export function LanguageProvider({
     document.documentElement.lang = lang;
   }, [lang]);
 
-  function setLanguage(nextLanguage: string) {
+  function setLanguage(nextLanguage: string, options?: { refresh?: boolean }) {
     const normalized = normalizeLanguage(nextLanguage);
     setLang(normalized);
     writeLanguageCookie(normalized);
+
+    if (options?.refresh === false) {
+      return;
+    }
+
     startTransition(() => {
       router.refresh();
     });

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   createContext,
@@ -51,7 +51,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   const resolveFromIp = useEffectEvent(async () => {
     try {
-      const response = await fetch(apiPath("/api/location/resolve"), {
+      const response = await fetch(apiPath(`/api/location/resolve?lang=${lang}`), {
         cache: "no-store",
       });
 
@@ -66,21 +66,27 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         resolvedAt: new Date().toISOString(),
       });
     } catch {
-      setStatus("error");
+      setStatus(location ? "ready" : "error");
       setError(translations[lang].error);
     }
   });
 
   useEffect(() => {
     const stored = parseStoredLocation(localStorage.getItem(LOCATION_STORAGE_KEY));
+    const hasStoredLocation = Boolean(stored);
+    let cancelled = false;
 
     if (stored) {
       setLocation(stored);
       setStatus("ready");
+      setError("");
+    } else {
+      setStatus("resolving");
     }
 
-    let cancelled = false;
-    setStatus("resolving");
+    if (refreshTick === 0 && hasStoredLocation) {
+      return;
+    }
 
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       void resolveFromIp();
@@ -114,7 +120,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
             country = data.countryName;
           }
         } catch {
-          // Ignore reverse geocode errors and keep coordinates.
+          // Ignore reverse geocode errors and keep coordinates only.
         }
 
         applyLocation({
@@ -149,6 +155,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     status,
     error,
     refreshLocation: () => {
+      setStatus("resolving");
+      setError("");
       startTransition(() => {
         setRefreshTick((current) => current + 1);
       });

@@ -1,7 +1,18 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { Cloud, Droplets, Loader2, MapPin, Navigation, Navigation2, Sparkles, Waves, Wind, X } from "lucide-react";
+import {
+  Cloud,
+  Droplets,
+  Loader2,
+  MapPin,
+  Navigation,
+  Navigation2,
+  Sparkles,
+  Waves,
+  Wind,
+  X,
+} from "lucide-react";
 import { Drawer } from "vaul";
 
 import { useLocation } from "@/components/LocationProvider";
@@ -44,12 +55,14 @@ const translations: TranslationMap<{
   dropOffs: (sunset: string) => string;
   dropOffsDescription: string;
   recommendedGear: string;
-  locationFallback: string;
+  savedPlaces: string;
+  wind: string;
+  savedPlacesValue: (count: number) => string;
 }> = {
   ru: {
     yourLocation: "Ваша локация",
     connecting: "Подключение",
-    currentPosition: "Текущая геопозиция",
+    currentPosition: "Текущая позиция",
     resolving: "Определение...",
     weather: "Погода",
     loading: "Загрузка...",
@@ -62,16 +75,18 @@ const translations: TranslationMap<{
     biteNow: "Клев сейчас",
     aiAnalysis: "Анализ водоема от ИИ",
     analyticsSummary: "Сводка аналитики",
-    geoSummary: "Сводка гео",
+    geoSummary: "Геосводка",
     greeting: (userName, temperature, pressure) =>
-      `Привет, ${userName}. Погода показывает ${temperature}, а атмосферное давление — ${pressure}. Такие условия подходят для поиска рыбы на свалах, бровках и спокойных участках.`,
+      `Привет, ${userName}. Сейчас около ${temperature}, давление держится на уровне ${pressure}. Такие условия обычно хорошо работают на бровках, свалах и спокойных окнах у береговой линии.`,
     whereToSearch: "Где искать рыбу",
     shallowBays: "Мелководные заливы",
-    shallowBaysDescription: "Вода здесь прогревается быстрее и притягивает малька и мирную рыбу.",
-    dropOffs: (sunset) => `Глубокие бровки (закат: ${sunset})`,
-    dropOffsDescription: "Ближе к вечеру крупный хищник выходит из глубины к береговым откосам.",
+    shallowBaysDescription: "Вода здесь прогревается быстрее и подтягивает малька и мирную рыбу.",
+    dropOffs: (sunset) => `Глубокие бровки и свалы (закат: ${sunset})`,
+    dropOffsDescription: "Ближе к вечеру крупный хищник выходит из глубины к береговым перепадам.",
     recommendedGear: "Рекомендуемые снасти",
-    locationFallback: "Определение позиции...",
+    savedPlaces: "Сохраненные места",
+    wind: "Ветер",
+    savedPlacesValue: (count) => `${count} точек сохранено`,
   },
   en: {
     yourLocation: "Your location",
@@ -91,19 +106,21 @@ const translations: TranslationMap<{
     analyticsSummary: "Analytics summary",
     geoSummary: "Geo summary",
     greeting: (userName, temperature, pressure) =>
-      `Hi, ${userName}. The weather shows ${temperature}, and the air pressure is ${pressure}. These conditions look promising around ledges, drop-offs, and calmer water.`,
+      `Hi, ${userName}. It is around ${temperature}, and the pressure is ${pressure}. These conditions usually look best around drop-offs, ledges, and calmer shoreline pockets.`,
     whereToSearch: "Where to search for fish",
     shallowBays: "Shallow bays",
     shallowBaysDescription: "Water warms faster here and draws baitfish and peaceful species.",
-    dropOffs: (sunset) => `Deep drop-offs (sunset: ${sunset})`,
-    dropOffsDescription: "Closer to evening, larger predators move from depth toward the shoreline edges.",
+    dropOffs: (sunset) => `Deep ledges and drop-offs (sunset: ${sunset})`,
+    dropOffsDescription: "Toward the evening, larger predators move from depth toward the shoreline edges.",
     recommendedGear: "Recommended tackle",
-    locationFallback: "Resolving position...",
+    savedPlaces: "Saved places",
+    wind: "Wind",
+    savedPlacesValue: (count) => `${count} places saved`,
   },
   es: {
     yourLocation: "Tu ubicación",
     connecting: "Conectando",
-    currentPosition: "Ubicación actual",
+    currentPosition: "Posición actual",
     resolving: "Resolviendo...",
     weather: "Clima",
     loading: "Cargando...",
@@ -116,16 +133,18 @@ const translations: TranslationMap<{
     biteNow: "Actividad ahora",
     aiAnalysis: "Análisis del agua con IA",
     analyticsSummary: "Resumen analítico",
-    geoSummary: "Resumen geo",
+    geoSummary: "Resumen geográfico",
     greeting: (userName, temperature, pressure) =>
-      `Hola, ${userName}. El tiempo muestra ${temperature} y la presión es ${pressure}. Estas condiciones son favorables cerca de orillas, cortes y zonas tranquilas.`,
+      `Hola, ${userName}. Ahora hay unos ${temperature} y la presión está en ${pressure}. Estas condiciones suelen funcionar bien en cortes, bordes y zonas tranquilas cerca de la orilla.`,
     whereToSearch: "Dónde buscar peces",
     shallowBays: "Bahías poco profundas",
     shallowBaysDescription: "El agua se calienta más rápido aquí y atrae alevines y peces pacíficos.",
     dropOffs: (sunset) => `Cortes profundos (puesta: ${sunset})`,
-    dropOffsDescription: "Al atardecer, los depredadores grandes salen de la profundidad hacia la orilla.",
+    dropOffsDescription: "Al caer la tarde, los grandes depredadores salen de la profundidad hacia la orilla.",
     recommendedGear: "Equipo recomendado",
-    locationFallback: "Resolviendo ubicación...",
+    savedPlaces: "Lugares guardados",
+    wind: "Viento",
+    savedPlacesValue: (count) => `${count} lugares guardados`,
   },
   fr: {
     yourLocation: "Votre position",
@@ -145,14 +164,16 @@ const translations: TranslationMap<{
     analyticsSummary: "Résumé analytique",
     geoSummary: "Résumé géo",
     greeting: (userName, temperature, pressure) =>
-      `Bonjour, ${userName}. La météo indique ${temperature} et la pression est de ${pressure}. Ces conditions sont intéressantes près des cassures, bordures et zones calmes.`,
+      `Bonjour, ${userName}. Il fait environ ${temperature} et la pression est à ${pressure}. Ces conditions fonctionnent souvent mieux près des cassures, bordures et zones calmes du rivage.`,
     whereToSearch: "Où chercher le poisson",
     shallowBays: "Baies peu profondes",
     shallowBaysDescription: "L'eau s'y réchauffe plus vite et attire les alevins et les poissons blancs.",
     dropOffs: (sunset) => `Cassures profondes (coucher: ${sunset})`,
-    dropOffsDescription: "En fin de journée, les gros prédateurs quittent la profondeur vers les bordures.",
+    dropOffsDescription: "En soirée, les gros prédateurs quittent la profondeur vers les bordures.",
     recommendedGear: "Matériel conseillé",
-    locationFallback: "Localisation...",
+    savedPlaces: "Spots sauvegardés",
+    wind: "Vent",
+    savedPlacesValue: (count) => `${count} spots enregistrés`,
   },
   pt: {
     yourLocation: "Sua localização",
@@ -172,14 +193,16 @@ const translations: TranslationMap<{
     analyticsSummary: "Resumo analítico",
     geoSummary: "Resumo geográfico",
     greeting: (userName, temperature, pressure) =>
-      `Olá, ${userName}. O tempo mostra ${temperature} e a pressão está em ${pressure}. Essas condições favorecem áreas de quebra, bordas e águas mais calmas.`,
+      `Olá, ${userName}. Agora está em torno de ${temperature} e a pressão marca ${pressure}. Essas condições costumam funcionar bem em quedas, bordas e águas mais calmas perto da margem.`,
     whereToSearch: "Onde procurar peixe",
     shallowBays: "Baías rasas",
     shallowBaysDescription: "A água aquece mais rápido aqui e atrai pequenos peixes e espécies pacíficas.",
     dropOffs: (sunset) => `Quedas profundas (pôr do sol: ${sunset})`,
     dropOffsDescription: "No fim do dia, os grandes predadores saem da profundidade para as bordas.",
     recommendedGear: "Equipamentos recomendados",
-    locationFallback: "Resolvendo posição...",
+    savedPlaces: "Locais salvos",
+    wind: "Vento",
+    savedPlacesValue: (count) => `${count} locais salvos`,
   },
 };
 
@@ -209,8 +232,6 @@ export function HomeHero({
   lang: LanguageCode;
   userName: string;
   savedPlacesCount: number;
-  pendingShoppingCount: number;
-  upcomingTripsCount: number;
 }) {
   const { location, refreshLocation } = useLocation();
   const [weather, setWeather] = useState<WeatherPayload | null>(null);
@@ -287,10 +308,11 @@ export function HomeHero({
               </span>
             </div>
             <h1 suppressHydrationWarning className="line-clamp-2 font-display text-[26px] font-bold leading-tight tracking-tight text-white">
-              {location ? location.city || t.currentPosition : t.resolving}
+              {location ? location.city || location.country || t.currentPosition : t.resolving}
             </h1>
           </div>
           <button
+            type="button"
             onClick={refreshLocation}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition hover:bg-white/10"
           >
@@ -329,14 +351,13 @@ export function HomeHero({
               <div className="mt-1 font-display text-[32px] font-bold leading-none tracking-tighter text-primary">
                 {getBiteLevelLabel(weather?.biteIndex, lang)}
               </div>
-              <div className="mt-2 flex items-center justify-between text-[13px] font-medium text-white/50">
-                <span>{t.biteNow}</span>
-              </div>
+              <div className="mt-2 text-[13px] font-medium text-white/50">{t.biteNow}</div>
             </div>
           </div>
         </div>
 
         <button
+          type="button"
           onClick={() => setAiOpen(true)}
           disabled={loading || (!weather && !weatherError)}
           className="group relative flex w-full items-center justify-between overflow-hidden rounded-[22px] bg-primary px-6 py-4 text-[16px] font-bold text-[#0a1520] shadow-[0_8px_24px_rgba(103,232,178,0.2)] transition-all active:scale-95 disabled:opacity-50"
@@ -364,11 +385,15 @@ export function HomeHero({
                   <div>
                     <h2 className="text-lg font-bold leading-tight text-white">{t.analyticsSummary}</h2>
                     <p suppressHydrationWarning className="mt-0.5 text-[13px] text-text-muted">
-                      {location ? location.city || t.currentPosition : t.geoSummary}
+                      {location ? location.city || location.country || t.currentPosition : t.geoSummary}
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setAiOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-soft text-text-muted transition hover:text-white">
+                <button
+                  type="button"
+                  onClick={() => setAiOpen(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-soft text-text-muted transition hover:text-white"
+                >
                   <X size={18} />
                 </button>
               </div>
@@ -411,14 +436,14 @@ export function HomeHero({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
                       <Waves size={14} />
-                      Water
+                      {t.savedPlaces}
                     </div>
-                    <div className="text-sm font-semibold text-white">{savedPlacesCount} spots saved</div>
+                    <div className="text-sm font-semibold text-white">{t.savedPlacesValue(savedPlacesCount)}</div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-muted">
                       <Wind size={14} />
-                      Wind
+                      {t.wind}
                     </div>
                     <div className="text-sm font-semibold text-white">{weather ? `${weather.windKmh} km/h` : "--"}</div>
                   </div>

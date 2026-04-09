@@ -100,6 +100,7 @@ export async function POST(req: Request) {
         lastName: safeLastName,
         handle: safeHandle,
         birthDate: parsedBirthDate,
+        preferredLanguage: language,
         passwordHash: hashPassword(safePassword),
         avatarGradient: DEFAULT_AVATAR_GRADIENT,
         avatarPath: "/images/vatar-2.jpg",

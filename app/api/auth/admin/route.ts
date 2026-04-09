@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { getLanguageCookieOptions, getSessionCookieOptions } from "@/lib/auth-cookies";
 import { APP_BASE_PATH } from "@/lib/app-paths";
-import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE_NAME } from "@/lib/i18n";
+import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE_NAME, normalizeLanguage } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
@@ -25,7 +25,11 @@ export async function GET(req: Request) {
 
     const cookieStore = await cookies();
     cookieStore.set("fishflow_uid", admin.id, getSessionCookieOptions(req));
-    cookieStore.set(LANGUAGE_COOKIE_NAME, DEFAULT_LANGUAGE, getLanguageCookieOptions(req));
+    cookieStore.set(
+      LANGUAGE_COOKIE_NAME,
+      normalizeLanguage(admin.preferredLanguage || DEFAULT_LANGUAGE),
+      getLanguageCookieOptions(req),
+    );
 
     return NextResponse.redirect(new URL(`${APP_BASE_PATH || ""}/`, req.url));
   } catch {

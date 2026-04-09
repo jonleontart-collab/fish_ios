@@ -44,6 +44,7 @@ model User {
   firstName      String?
   lastName       String?
   birthDate      DateTime?
+  preferredLanguage String    @default("ru")
   bio            String?
   city           String?
   experienceYears Int?

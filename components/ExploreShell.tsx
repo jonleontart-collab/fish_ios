@@ -1,16 +1,17 @@
 'use client';
 
-import { useDeferredValue, useEffect, useState, useTransition } from "react";
+import { useDeferredValue, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Download, MapPin, Search, Plus, Map as MapIcon, List as ListIcon, Maximize, Minimize, Navigation2, Star, ImagePlus, Loader2, Check, Sparkles, X } from "lucide-react";
+import { Download, Search, Plus, Map as MapIcon, List as ListIcon, Navigation2, Star, ImagePlus, Loader2, Check, Sparkles, X } from "lucide-react";
 import { Drawer } from "vaul";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useLocation } from "@/components/LocationProvider";
 import { apiPath, withBasePath } from "@/lib/app-paths";
 import { getSpeciesBadge } from "@/lib/assets";
 import { placeTypeLabel } from "@/lib/format";
+import type { TranslationMap } from "@/lib/i18n";
 
 const DynamicMap = dynamic(() => import("@/components/ClientMap"), { ssr: false });
 
@@ -37,14 +38,240 @@ type ExplorePlace = {
   longitude: number;
 };
 
+type FilterKey = "ALL" | "WILD" | "PAYED" | "CLUB" | "SHOP";
+
+const filters: TranslationMap<Array<{ key: FilterKey; label: string }>> = {
+  ru: [
+    { key: "ALL", label: "Все" },
+    { key: "WILD", label: "Дикие водоемы" },
+    { key: "PAYED", label: "Платные пруды" },
+    { key: "CLUB", label: "Базы и клубы" },
+    { key: "SHOP", label: "Снасти и лодки" },
+  ],
+  en: [
+    { key: "ALL", label: "All" },
+    { key: "WILD", label: "Wild waters" },
+    { key: "PAYED", label: "Paid ponds" },
+    { key: "CLUB", label: "Bases and clubs" },
+    { key: "SHOP", label: "Tackle and boats" },
+  ],
+  es: [
+    { key: "ALL", label: "Todo" },
+    { key: "WILD", label: "Aguas salvajes" },
+    { key: "PAYED", label: "Lagos de pago" },
+    { key: "CLUB", label: "Bases y clubes" },
+    { key: "SHOP", label: "Tienda y barcos" },
+  ],
+  fr: [
+    { key: "ALL", label: "Tout" },
+    { key: "WILD", label: "Eaux sauvages" },
+    { key: "PAYED", label: "Étangs payants" },
+    { key: "CLUB", label: "Bases et clubs" },
+    { key: "SHOP", label: "Magasins et bateaux" },
+  ],
+  pt: [
+    { key: "ALL", label: "Tudo" },
+    { key: "WILD", label: "Águas selvagens" },
+    { key: "PAYED", label: "Pesque-pagues" },
+    { key: "CLUB", label: "Bases e clubes" },
+    { key: "SHOP", label: "Lojas e barcos" },
+  ],
+};
+
+const translations: TranslationMap<{
+  noPhoto: string;
+  searchPlaceholder: string;
+  aiAnalysis: string;
+  newRating: string;
+  speciesCount: (count: number) => string;
+  nothingFound: string;
+  nothingFoundDescription: string;
+  map: string;
+  list: string;
+  navigation: string;
+  placeOverview: string;
+  routeLabel: (distance: string) => string;
+  offlineReady: string;
+  unpackingTiles: (progress: number) => string;
+  downloadRoute: string;
+  aiDrawerTitle: string;
+  aiDrawerSubtitle: string;
+  aiScanning: string;
+  aiSummary: (count: number) => string;
+  wildHint: string;
+  paidHint: string;
+  neuralResult: string;
+  bestSpot: string;
+  bestSpotText: (place: string, fish: string) => string;
+  predatorFallback: string;
+  zoomHint: string;
+  rescan: string;
+}> = {
+  ru: {
+    noPhoto: "Нет фото",
+    searchPlaceholder: "Поиск по базе, геолокации, улову...",
+    aiAnalysis: "AI анализ",
+    newRating: "Новая",
+    speciesCount: (count) => `+${count} видов`,
+    nothingFound: "Ничего не найдено",
+    nothingFoundDescription: "Попробуйте изменить запрос, фильтры или сдвинуть карту.",
+    map: "Карта",
+    list: "Список",
+    navigation: "Навигация",
+    placeOverview: "Обзор базы",
+    routeLabel: (distance) => `Маршрут · ${distance} · Открыто`,
+    offlineReady: "Карта в офлайне",
+    unpackingTiles: (progress) => `Распаковка тайлов ${progress}%`,
+    downloadRoute: "Скачать маршрут (45 МБ)",
+    aiDrawerTitle: "Apify + Gemini анализ",
+    aiDrawerSubtitle: "Оценка текущего видового экрана",
+    aiScanning: "Gemini анализирует водоемы, собранные через Apify...",
+    aiSummary: (count) => `В зоне видимости найдено ${count} водоемов.`,
+    wildHint: "Дикие участки хорошо подходят для активного поиска хищника.",
+    paidHint: "Платные пруды обычно дают более стабильную рыбалку на карпа.",
+    neuralResult: "Итог нейросети",
+    bestSpot: "Лучшая точка сейчас:",
+    bestSpotText: (place, fish) => `Рекомендуем посетить ${place}. По текущим данным там высокая активность ${fish}.`,
+    predatorFallback: "хищника",
+    zoomHint: "Приблизьте карту, чтобы мы смогли найти подходящие водоемы рядом.",
+    rescan: "Повторить сканирование",
+  },
+  en: {
+    noPhoto: "No photo",
+    searchPlaceholder: "Search by spots, location, or catches...",
+    aiAnalysis: "AI analysis",
+    newRating: "New",
+    speciesCount: (count) => `+${count} species`,
+    nothingFound: "Nothing found",
+    nothingFoundDescription: "Try changing the query, filters, or map area.",
+    map: "Map",
+    list: "List",
+    navigation: "Navigate",
+    placeOverview: "Spot overview",
+    routeLabel: (distance) => `Route · ${distance} · Open`,
+    offlineReady: "Map offline",
+    unpackingTiles: (progress) => `Unpacking tiles ${progress}%`,
+    downloadRoute: "Download route (45 MB)",
+    aiDrawerTitle: "Apify + Gemini analysis",
+    aiDrawerSubtitle: "Current area overview",
+    aiScanning: "Gemini is analyzing waters collected through Apify...",
+    aiSummary: (count) => `${count} waters found in view.`,
+    wildHint: "Wild waters look better for active predator search.",
+    paidHint: "Paid ponds usually offer steadier carp fishing.",
+    neuralResult: "Neural summary",
+    bestSpot: "Best spot right now:",
+    bestSpotText: (place, fish) => `We recommend ${place}. Current data suggests strong activity for ${fish}.`,
+    predatorFallback: "predators",
+    zoomHint: "Zoom in so we can find suitable waters nearby.",
+    rescan: "Run scan again",
+  },
+  es: {
+    noPhoto: "Sin foto",
+    searchPlaceholder: "Buscar por lugares, geolocalización o capturas...",
+    aiAnalysis: "Análisis IA",
+    newRating: "Nueva",
+    speciesCount: (count) => `+${count} especies`,
+    nothingFound: "No se encontró nada",
+    nothingFoundDescription: "Prueba otro texto, filtros o zona del mapa.",
+    map: "Mapa",
+    list: "Lista",
+    navigation: "Navegar",
+    placeOverview: "Ver lugar",
+    routeLabel: (distance) => `Ruta · ${distance} · Abierto`,
+    offlineReady: "Mapa offline",
+    unpackingTiles: (progress) => `Preparando teselas ${progress}%`,
+    downloadRoute: "Descargar ruta (45 MB)",
+    aiDrawerTitle: "Análisis Apify + Gemini",
+    aiDrawerSubtitle: "Resumen de la zona actual",
+    aiScanning: "Gemini analiza aguas recopiladas a través de Apify...",
+    aiSummary: (count) => `Se encontraron ${count} lugares en la zona visible.`,
+    wildHint: "Las zonas salvajes van mejor para buscar depredadores.",
+    paidHint: "Los lagos de pago suelen dar una pesca más estable de carpa.",
+    neuralResult: "Resumen neuronal",
+    bestSpot: "Mejor punto ahora:",
+    bestSpotText: (place, fish) => `Recomendamos visitar ${place}. Los datos actuales muestran buena actividad de ${fish}.`,
+    predatorFallback: "depredadores",
+    zoomHint: "Acerca el mapa para encontrar aguas cercanas.",
+    rescan: "Repetir escaneo",
+  },
+  fr: {
+    noPhoto: "Sans photo",
+    searchPlaceholder: "Recherche par spots, géolocalisation ou prises...",
+    aiAnalysis: "Analyse IA",
+    newRating: "Nouveau",
+    speciesCount: (count) => `+${count} espèces`,
+    nothingFound: "Aucun résultat",
+    nothingFoundDescription: "Essayez une autre recherche, d'autres filtres ou une autre zone.",
+    map: "Carte",
+    list: "Liste",
+    navigation: "Itinéraire",
+    placeOverview: "Voir le spot",
+    routeLabel: (distance) => `Itinéraire · ${distance} · Ouvert`,
+    offlineReady: "Carte hors ligne",
+    unpackingTiles: (progress) => `Préparation des tuiles ${progress}%`,
+    downloadRoute: "Télécharger l'itinéraire (45 Mo)",
+    aiDrawerTitle: "Analyse Apify + Gemini",
+    aiDrawerSubtitle: "Résumé de la zone actuelle",
+    aiScanning: "Gemini analyse les spots collectés via Apify...",
+    aiSummary: (count) => `${count} spots détectés dans la zone visible.`,
+    wildHint: "Les zones sauvages semblent meilleures pour chercher les prédateurs.",
+    paidHint: "Les plans d'eau payants offrent souvent une pêche plus stable de la carpe.",
+    neuralResult: "Résumé du modèle",
+    bestSpot: "Meilleur spot maintenant :",
+    bestSpotText: (place, fish) => `Nous recommandons ${place}. Les données actuelles montrent une forte activité de ${fish}.`,
+    predatorFallback: "prédateurs",
+    zoomHint: "Zoomez pour trouver des spots adaptés autour de vous.",
+    rescan: "Relancer le scan",
+  },
+  pt: {
+    noPhoto: "Sem foto",
+    searchPlaceholder: "Buscar por pontos, geolocalização ou capturas...",
+    aiAnalysis: "Análise IA",
+    newRating: "Novo",
+    speciesCount: (count) => `+${count} espécies`,
+    nothingFound: "Nada encontrado",
+    nothingFoundDescription: "Tente mudar a busca, os filtros ou a área do mapa.",
+    map: "Mapa",
+    list: "Lista",
+    navigation: "Navegar",
+    placeOverview: "Ver local",
+    routeLabel: (distance) => `Rota · ${distance} · Aberto`,
+    offlineReady: "Mapa offline",
+    unpackingTiles: (progress) => `Preparando tiles ${progress}%`,
+    downloadRoute: "Baixar rota (45 MB)",
+    aiDrawerTitle: "Análise Apify + Gemini",
+    aiDrawerSubtitle: "Resumo da área atual",
+    aiScanning: "Gemini está analisando os locais coletados via Apify...",
+    aiSummary: (count) => `${count} pontos encontrados na área visível.`,
+    wildHint: "Águas selvagens parecem melhores para procurar predadores.",
+    paidHint: "Pesque-pagues costumam oferecer uma pescaria de carpa mais estável.",
+    neuralResult: "Resumo da IA",
+    bestSpot: "Melhor ponto agora:",
+    bestSpotText: (place, fish) => `Recomendamos visitar ${place}. Os dados atuais mostram boa atividade de ${fish}.`,
+    predatorFallback: "predadores",
+    zoomHint: "Aproxime o mapa para encontrarmos locais próximos.",
+    rescan: "Escanear novamente",
+  },
+};
+
 // Next/Image sometimes crashes with 500 when remote host (unsplash) deletes the image or returns 404.
-function SafeImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+function SafeImage({
+  src,
+  alt,
+  className,
+  emptyLabel,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  emptyLabel: string;
+}) {
   const [error, setError] = useState(false);
   if (!src || error) {
     return (
       <div className={`w-full h-full bg-[#0a1520] flex flex-col items-center justify-center border border-white/5 ${className}`}>
          <ImagePlus size={28} className="text-white/20 mb-2" />
-         <span className="text-[13px] font-bold text-white/30 uppercase tracking-widest">Нет фото</span>
+         <span className="text-[13px] font-bold text-white/30 uppercase tracking-widest">{emptyLabel}</span>
       </div>
     );
   }
@@ -69,18 +296,13 @@ async function requestNearbyPlaces(location: {
   return (await response.json()) as { places: ExplorePlace[] };
 }
 
-const filterLabels = [
-  { key: "ALL", label: "Все" },
-  { key: "WILD", label: "Дикие водоемы" },
-  { key: "PAYED", label: "Платные пруды" },
-  { key: "CLUB", label: "Базы / Клубы" },
-  { key: "SHOP", label: "Снасти / Лодки" },
-] as const;
-
 export function ExploreShell({ places }: { places: ExplorePlace[] }) {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+  const filterLabels = filters[lang];
   const { location } = useLocation();
   const [view, setView] = useState<"list" | "map">("map");
-  const [filter, setFilter] = useState<(typeof filterLabels)[number]["key"]>("ALL");
+  const [filter, setFilter] = useState<FilterKey>("ALL");
   const [query, setQuery] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [placesState, setPlacesState] = useState(places);
@@ -147,7 +369,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
             <div className="relative">
               <input 
                 type="text" 
-                placeholder="Поиск по базе, геолокации, улову..." 
+                placeholder={t.searchPlaceholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="w-full bg-surface-strong/90 backdrop-blur-3xl border border-white/10 rounded-[22px] py-4 pl-12 pr-12 text-[15px] font-bold text-white shadow-[0_8px_32px_rgba(0,0,0,0.5)] placeholder:text-white/40 focus:outline-none focus:border-primary/50 transition-colors"
@@ -164,7 +386,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
                 className="flex shrink-0 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-bold transition whitespace-nowrap shadow-xl backdrop-blur-md bg-accent/20 text-accent border border-accent/20 hover:bg-accent/30"
                 onClick={() => setIsAiDrawerOpen(true)}
               >
-                <Sparkles size={14} /> AI Анализ
+                <Sparkles size={14} /> {t.aiAnalysis}
               </button>
               {filterLabels.map((item) => (
                 <button
@@ -204,18 +426,18 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
                   className="group relative flex flex-col rounded-[28px] bg-surface-soft overflow-hidden border border-white/5 transition hover:bg-surface-strong hover:border-white/10 hover:shadow-2xl"
                 >
                   <div className="relative aspect-[4/3] w-full bg-black">
-                    <SafeImage src={place.displayImage!} alt={place.name} />
+                    <SafeImage src={place.displayImage!} alt={place.name} emptyLabel={t.noPhoto} />
                     
                     <div className="absolute top-4 left-4 flex flex-col gap-2">
                        <span className="backdrop-blur-xl bg-black/40 text-white text-[12px] font-bold px-3.5 py-2 rounded-full border border-white/10 shadow-lg">
-                         {placeTypeLabel(place.type)}
+                         {placeTypeLabel(place.type, lang)}
                        </span>
                     </div>
                     
                     <div className="absolute top-4 right-4">
                        <span className="flex items-center gap-1 backdrop-blur-xl bg-black/40 text-white text-[13px] font-bold px-3 py-2 rounded-full border border-white/10 shadow-lg">
                          <Star size={14} className="text-warning fill-warning" />
-                         {place.rating > 0 ? place.rating.toFixed(1) : "New"}
+                         {place.rating > 0 ? place.rating.toFixed(1) : t.newRating}
                        </span>
                     </div>
 
@@ -240,7 +462,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
                             </div>
                           ))}
                           <span className="text-[12px] font-bold text-white/80 pl-4 drop-shadow">
-                            +{place.fishSpeciesList.length} видов
+                            {t.speciesCount(place.fishSpeciesList.length)}
                           </span>
                         </div>
                      )}
@@ -253,9 +475,9 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
               <div className="h-20 w-20 mb-6 flex items-center justify-center rounded-full bg-surface border border-white/10 text-text-muted shadow-2xl">
                 <Search size={32} />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Ничего не найдено</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">{t.nothingFound}</h3>
               <p className="text-[15px] text-text-muted max-w-[300px]">
-                Попробуйте изменить радиус поиска, параметры фильтра или сместите карту.
+                {t.nothingFoundDescription}
               </p>
             </div>
           )
@@ -271,7 +493,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
                className="flex items-center justify-center gap-2 h-[52px] px-6 rounded-full bg-white text-black font-extrabold text-[15px] shadow-[0_16px_32px_rgba(0,0,0,0.4)] transition-transform hover:scale-105 active:scale-95"
             >
                {view === "list" ? <MapIcon size={18} /> : <ListIcon size={18} />}
-               {view === "list" ? "Карта" : "Список"}
+               {view === "list" ? t.map : t.list}
             </button>
             <Link
                href="/add"
@@ -292,7 +514,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
               
               <div className="flex items-center gap-4 mb-5 w-[90%]">
                  <div className="w-[72px] h-[72px] rounded-[24px] overflow-hidden shrink-0 border border-white/5 shadow-inner">
-                   <SafeImage src={selectedMapPlace.displayImage!} alt="" />
+                   <SafeImage src={selectedMapPlace.displayImage!} alt="" emptyLabel={t.noPhoto} />
                  </div>
                  <div className="min-w-0">
                    <h2 className="text-[19px] font-bold text-white truncate drop-shadow-md">{selectedMapPlace.name}</h2>
@@ -306,10 +528,10 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
 
               <div className="grid grid-cols-2 gap-3">
                  <button onClick={() => { setRouteTo(selectedMapPlace); setSelectedMapPlace(null); }} className="py-3.5 rounded-[18px] bg-primary text-black font-bold text-[15px] shadow-lg hover:bg-primary-strong transition">
-                   Навигация
+                   {t.navigation}
                  </button>
                  <Link href={`/places/${selectedMapPlace.slug}`} className="flex items-center justify-center py-3.5 rounded-[18px] bg-white/10 text-white font-bold text-[15px] border border-white/5 hover:bg-white/15 transition">
-                    Обзор базы
+                    {t.placeOverview}
                  </Link>
               </div>
            </div>
@@ -328,7 +550,9 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
             <div className="flex items-start justify-between gap-4 relative z-10">
               <div className="min-w-0">
                 <h3 className="font-bold text-white text-[22px] truncate">{routeTo.name}</h3>
-                <p className="text-[15px] text-primary font-bold mt-1 tracking-tight">Маршрут • {routeTo.distanceKm || "2.5"} км • Открыто</p>
+                <p className="text-[15px] text-primary font-bold mt-1 tracking-tight">
+                  {t.routeLabel(`${routeTo.distanceKm || "2.5"} km`)}
+                </p>
               </div>
               <button onClick={() => setRouteTo(null)} className="w-12 h-12 shrink-0 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition backdrop-blur-md">
                 <Plus size={24} className="rotate-45" />
@@ -347,11 +571,11 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
               }`}
             >
               {isRouteSaved ? (
-                <><Check size={20} /> Карта в оффлайне</>
+                <><Check size={20} /> {t.offlineReady}</>
               ) : downloadProgress > 0 ? (
-                <><Loader2 size={20} className="animate-spin" /> Распаковка тайлов {downloadProgress}%</>
+                <><Loader2 size={20} className="animate-spin" /> {t.unpackingTiles(downloadProgress)}</>
               ) : (
-                <><Download size={20} /> Скачать маршрут (45 МБ)</>
+                <><Download size={20} /> {t.downloadRoute}</>
               )}
             </button>
           </div>
@@ -376,8 +600,8 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
                      <Sparkles size={20} />
                    </div>
                    <div>
-                     <h2 className="text-lg font-bold text-white leading-tight">Apify + Gemini Анализ</h2>
-                     <p className="text-[13px] text-text-muted mt-0.5">Оценка текущего видового экрана</p>
+                      <h2 className="text-lg font-bold text-white leading-tight">{t.aiDrawerTitle}</h2>
+                      <p className="text-[13px] text-text-muted mt-0.5">{t.aiDrawerSubtitle}</p>
                    </div>
                  </div>
                  <button onClick={() => setIsAiDrawerOpen(false)} className="w-8 h-8 flex flex-col items-center justify-center rounded-full bg-surface-soft text-text-muted hover:text-white transition">
@@ -389,33 +613,36 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
                  {isScanning ? (
                     <div className="flex flex-col items-center justify-center py-10 space-y-4">
                        <Loader2 size={32} className="text-accent animate-spin" />
-                       <p className="text-white font-medium text-center max-w-[250px]">Gemini анализирует водоемы, собранные через Apify...</p>
+                       <p className="text-white font-medium text-center max-w-[250px]">{t.aiScanning}</p>
                     </div>
                  ) : (
                     <>
                        <div className="text-[16px] leading-relaxed text-white">
-                          В зоне видимости найдено <strong>{filteredPlaces.length}</strong> водоемов. 
-                          {filteredPlaces.some(p => p.type === 'WILD') && " Дикие участки идеальны для джига."}
-                          {filteredPlaces.some(p => p.type === 'PAYED') && " Платные пруды предлагают комфортную рыбалку на карпа."}
+                          {t.aiSummary(filteredPlaces.length)}
+                          {filteredPlaces.some((p) => p.type === "WILD") && ` ${t.wildHint}`}
+                          {filteredPlaces.some((p) => p.type === "PAYED") && ` ${t.paidHint}`}
                        </div>
                        
                        {/* Focus Area */}
                        <div className="space-y-3">
-                          <h3 className="font-semibold text-accent text-[13px] uppercase tracking-wider">Итог нейросети</h3>
+                          <h3 className="font-semibold text-accent text-[13px] uppercase tracking-wider">{t.neuralResult}</h3>
                           <div className="rounded-[20px] bg-accent/10 border border-accent/20 p-4">
-                            <div className="font-bold text-white mb-2">Лучшая точка сейчас:</div>
+                            <div className="font-bold text-white mb-2">{t.bestSpot}</div>
                             {filteredPlaces.length > 0 ? (
                                <div className="text-[14px] text-white/80 leading-relaxed">
-                                  Рекомендуем посетить <strong>{filteredPlaces[0].name}</strong>. Судя по свежим данным, там высокая активность {filteredPlaces[0].fishSpeciesList[0] || 'хищника'}.
+                                  {t.bestSpotText(
+                                    filteredPlaces[0].name,
+                                    filteredPlaces[0].fishSpeciesList[0] || t.predatorFallback,
+                                  )}
                                </div>
                             ) : (
-                               <div className="text-[14px] text-white/80 leading-relaxed">Приблизьте карту, чтобы мы могли найти подходящие скрытые озера.</div>
+                               <div className="text-[14px] text-white/80 leading-relaxed">{t.zoomHint}</div>
                             )}
                           </div>
                        </div>
                        
                        <button onClick={() => { setIsAiDrawerOpen(false); void scanNearby(); }} className="w-full py-4 rounded-[22px] bg-white/10 text-white font-bold hover:bg-white/20 transition">
-                          Повторить сканирование
+                          {t.rescan}
                        </button>
                     </>
                  )}

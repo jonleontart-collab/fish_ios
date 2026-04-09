@@ -46,12 +46,12 @@ export async function POST(req: Request) {
 
   try {
     const { handle, password, lang } = (await req.json()) as LoginPayload;
-    const language = normalizeLanguage(lang);
+    const requestedLanguage = normalizeLanguage(lang);
     const safeHandle = slugify(handle?.trim() ?? "");
     const safePassword = password?.trim() ?? "";
 
     if (!safeHandle || !safePassword) {
-      return NextResponse.json({ error: errors[language].missing }, { status: 400 });
+      return NextResponse.json({ error: errors[requestedLanguage].missing }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -59,9 +59,10 @@ export async function POST(req: Request) {
     });
 
     if (!user?.passwordHash || !verifyPassword(safePassword, user.passwordHash)) {
-      return NextResponse.json({ error: errors[language].invalid }, { status: 401 });
+      return NextResponse.json({ error: errors[requestedLanguage].invalid }, { status: 401 });
     }
 
+    const language = normalizeLanguage(user.preferredLanguage || requestedLanguage);
     cookieStore.set("fishflow_uid", user.id, getSessionCookieOptions(req));
     cookieStore.set(LANGUAGE_COOKIE_NAME, language, getLanguageCookieOptions(req));
 

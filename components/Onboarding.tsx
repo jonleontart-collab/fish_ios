@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight, KeyRound, UserRound } from "lucide-react";
 
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/components/LanguageProvider";
 import { apiPath, withBasePath } from "@/lib/app-paths";
 import type { TranslationMap } from "@/lib/i18n";
@@ -258,10 +257,6 @@ export default function Onboarding() {
           >
             {t.registerTab}
           </button>
-        </div>
-
-        <div className="mb-6">
-          <LanguageSwitcher />
         </div>
 
         <div className="mb-5">

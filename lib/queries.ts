@@ -78,11 +78,21 @@ function mapCatchWithEngagement<
 async function getRequiredCurrentUser() {
   const user = await getCurrentUser();
 
-  if (!user) {
-    throw new Error("Database is empty. Run npm run db:init.");
+  if (user) {
+    return user;
   }
 
-  return user;
+  const fallbackUser = await prisma.user.findFirst({
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  if (!fallbackUser) {
+    throw new Error("No users found. Run npm run db:init.");
+  }
+
+  return fallbackUser;
 }
 
 async function getJoinedChats(userId: string, take?: number) {

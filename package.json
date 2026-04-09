@@ -8,8 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "db:generate": "prisma generate",
-    "db:push": "python scripts/init_db.py",
-    "db:init": "python scripts/init_db.py && npm run db:seed",
+    "db:push": "prisma db push",
+    "db:init": "prisma db push && npm run db:seed",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
