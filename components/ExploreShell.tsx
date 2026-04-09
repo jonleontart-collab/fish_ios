@@ -8,6 +8,7 @@ import { Download, Search, Plus, Map as MapIcon, List as ListIcon, Navigation2, 
 import { Drawer } from "vaul";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useLocation } from "@/components/LocationProvider";
+import { useToast } from "@/components/ToastProvider";
 import { apiPath, withBasePath } from "@/lib/app-paths";
 import { getSpeciesBadge } from "@/lib/assets";
 import { placeTypeLabel } from "@/lib/format";
@@ -320,6 +321,7 @@ async function requestNearbyPlaces(location: {
 
 export function ExploreShell({ places }: { places: ExplorePlace[] }) {
   const { lang } = useLanguage();
+  const { pushToast } = useToast();
   const t = translations[lang];
   const filterLabels = filters[lang];
   const { location } = useLocation();
@@ -331,6 +333,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
   const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number } | null>(null);
   const [selectedMapPlace, setSelectedMapPlace] = useState<ExplorePlace | null>(null);
   const [routeTo, setRouteTo] = useState<ExplorePlace | null>(null);
+  const [mapFitSignal, setMapFitSignal] = useState(0);
   
   const [isRouteSaved, setIsRouteSaved] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
@@ -362,8 +365,30 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
         radiusKm: 200,
       });
       setPlacesState(payload.places);
+      setRouteTo(null);
+      setSelectedMapPlace(null);
+      setView("map");
+      setMapFitSignal((current) => current + 1);
+
+      if (payload.places.length > 0) {
+        pushToast({
+          tone: "success",
+          title: `Найдено мест: ${payload.places.length}`,
+          description: "Метки уже показаны на карте в этой области.",
+        });
+      } else {
+        pushToast({
+          tone: "info",
+          title: t.nothingFound,
+          description: t.nothingFoundDescription,
+        });
+      }
     } catch {
-      // ignore
+      pushToast({
+        tone: "error",
+        title: "Поиск мест не сработал",
+        description: "Проверь запрос или попробуй еще раз через пару секунд.",
+      });
     } finally {
       setIsScanning(false);
     }
@@ -445,7 +470,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
       </div>
 
       {view === "map" ? (
-        <div className="fixed top-[118px] inset-x-0 z-[110] flex justify-center px-4 pointer-events-none">
+        <div className="fixed top-[150px] inset-x-0 z-[110] flex justify-center px-4 pointer-events-none">
           <button
             type="button"
             onClick={() =>
@@ -470,6 +495,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
             places={filteredPlaces} 
             routeTo={routeTo} 
             onViewportChange={setMapCenter}
+            fitSignal={mapFitSignal}
             onPlaceSelect={(place) => {
               const fullPlace = filteredPlaces.find(p => p.slug === place.slug);
               if (fullPlace) setSelectedMapPlace(fullPlace);
@@ -647,7 +673,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
           <Drawer.Overlay className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-md" />
           <Drawer.Content 
             className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto mt-24 flex max-h-[90vh] max-w-md flex-col rounded-t-[36px] bg-[#0c1218] border-t border-white/10 outline-none overflow-hidden"
-            style={{ backgroundImage: `url('${withBasePath("/images/modal-bg.png")}')`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+            style={{ backgroundImage: `linear-gradient(180deg, rgba(5, 9, 15, 0.76), rgba(5, 9, 15, 0.96)), url('${withBasePath("/modal-backgrounds/map-discovery-bg.png")}')`, backgroundSize: 'cover', backgroundPosition: 'center' }}
           >
             <div className="absolute inset-0 bg-black/50 mix-blend-multiply z-0 pointer-events-none" />
             <div className="flex-1 overflow-y-auto hide-scrollbar relative z-10">

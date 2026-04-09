@@ -33,6 +33,11 @@ enum ChatVisibility {
   PRIVATE
 }
 
+enum MessageMediaType {
+  IMAGE
+  VIDEO
+}
+
 enum ShoppingItemStatus {
   PLANNED
   BOUGHT
@@ -71,6 +76,7 @@ model User {
   sentFriends    UserFriend[]   @relation("UserFriendsUser")
   receivedFriends UserFriend[]  @relation("UserFriendsFriend")
   savedRoutes    SavedRoute[]
+  catchReposts   CatchRepost[]
 }
 
 model Place {
@@ -127,6 +133,7 @@ model Catch {
   place              Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
   comments           CatchComment[]
   likes              CatchLike[]
+  reposts            CatchRepost[]
 
   @@index([createdAt])
   @@index([userId, createdAt])
@@ -215,11 +222,27 @@ model Message {
   chatId    String
   userId    String
   body      String
+  mediaPath String?
+  mediaType MessageMediaType?
   createdAt DateTime @default(now())
   chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([chatId, createdAt])
+}
+
+model CatchRepost {
+  id        String   @id @default(cuid())
+  catchId   String
+  userId    String
+  caption   String?
+  createdAt DateTime @default(now())
+  catch     Catch    @relation(fields: [catchId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([catchId, userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 model PlacePhoto {

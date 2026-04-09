@@ -1,11 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Fish, MapPin, UserPlus } from "lucide-react";
+import { ArrowLeft, CalendarDays, Trophy } from "lucide-react";
 
+import { CatchCard } from "@/components/CatchCard";
+import { DirectChatButton } from "@/components/DirectChatButton";
+import { FriendToggleButton } from "@/components/FriendToggleButton";
+import { FriendsDrawer } from "@/components/FriendsDrawer";
+import { TripReportCard } from "@/components/TripReportCard";
 import { withBasePath } from "@/lib/app-paths";
+import { areFriends, getFriendsForUser } from "@/lib/social";
 import { type TranslationMap } from "@/lib/i18n";
 import { getServerLanguage } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -14,77 +21,95 @@ const translations: TranslationMap<{
   fallbackBio: string;
   catches: string;
   trips: string;
-  follow: string;
+  friends: string;
   experience: string;
   prefers: string;
   favoriteWater: string;
   recentCatches: string;
+  recentTrips: string;
   emptyCatches: string;
+  emptyTrips: string;
+  noPhoto: string;
   years: (value: number) => string;
 }> = {
   ru: {
     profile: "Профиль",
-    fallbackBio: "Это страница рыбака-энтузиаста. О себе пока ничего не добавил, но уловы говорят сами за себя.",
-    catches: "Уловов",
-    trips: "Поездок",
-    follow: "Подписаться",
+    fallbackBio: "Пользователь пока не заполнил био, но его публикации и поездки уже многое говорят о стиле ловли.",
+    catches: "Уловы",
+    trips: "Поездки",
+    friends: "Друзья",
     experience: "Опыт ловли",
     prefers: "Предпочитает",
     favoriteWater: "Любимый водоем",
-    recentCatches: "Недавние уловы",
-    emptyCatches: "Пользователь пока не загружал фото уловов.",
-    years: (value) => `${value} ${value > 4 ? "лет" : "года"}`,
+    recentCatches: "Публикации",
+    recentTrips: "Поездки и отчеты",
+    emptyCatches: "Пользователь пока не добавил публикации.",
+    emptyTrips: "У пользователя пока нет опубликованных поездок.",
+    noPhoto: "Нет фото",
+    years: (value) => `${value} лет`,
   },
   en: {
     profile: "Profile",
-    fallbackBio: "This is an angler’s profile. No bio yet, but the catches speak for themselves.",
+    fallbackBio: "This user has not filled in a bio yet, but the posts and trips already show the fishing style.",
     catches: "Catches",
     trips: "Trips",
-    follow: "Follow",
+    friends: "Friends",
     experience: "Experience",
     prefers: "Prefers",
     favoriteWater: "Favorite water",
-    recentCatches: "Recent catches",
-    emptyCatches: "This user has not uploaded catch photos yet.",
+    recentCatches: "Posts",
+    recentTrips: "Trips and reports",
+    emptyCatches: "This user has not added posts yet.",
+    emptyTrips: "This user does not have published trips yet.",
+    noPhoto: "No photo",
     years: (value) => `${value} years`,
   },
   es: {
     profile: "Perfil",
-    fallbackBio: "Esta es la página de un pescador entusiasta. Aún no añadió biografía, pero las capturas hablan por sí solas.",
+    fallbackBio: "Este usuario aún no ha completado su bio, pero sus publicaciones y salidas ya muestran su estilo.",
     catches: "Capturas",
     trips: "Salidas",
-    follow: "Seguir",
+    friends: "Amigos",
     experience: "Experiencia",
     prefers: "Prefiere",
     favoriteWater: "Agua favorita",
-    recentCatches: "Capturas recientes",
-    emptyCatches: "Este usuario todavía no ha subido fotos de capturas.",
+    recentCatches: "Publicaciones",
+    recentTrips: "Salidas y reportes",
+    emptyCatches: "Este usuario todavía no ha añadido publicaciones.",
+    emptyTrips: "Este usuario aún no tiene salidas publicadas.",
+    noPhoto: "Sin foto",
     years: (value) => `${value} años`,
   },
   fr: {
     profile: "Profil",
-    fallbackBio: "Voici la page d'un pêcheur passionné. Il n'a pas encore ajouté de bio, mais ses prises parlent pour lui.",
+    fallbackBio: "Cet utilisateur n'a pas encore rempli sa bio, mais ses publications et sorties montrent déjà son style.",
     catches: "Prises",
     trips: "Sorties",
-    follow: "Suivre",
+    friends: "Amis",
     experience: "Expérience",
     prefers: "Préfère",
     favoriteWater: "Plan d'eau favori",
-    recentCatches: "Prises récentes",
-    emptyCatches: "Cet utilisateur n'a pas encore publié de photos de prises.",
+    recentCatches: "Publications",
+    recentTrips: "Sorties et rapports",
+    emptyCatches: "Cet utilisateur n'a pas encore ajouté de publications.",
+    emptyTrips: "Cet utilisateur n'a pas encore de sorties publiées.",
+    noPhoto: "Sans photo",
     years: (value) => `${value} ans`,
   },
   pt: {
     profile: "Perfil",
-    fallbackBio: "Esta é a página de um pescador entusiasta. Ainda não adicionou bio, mas as capturas falam por si.",
+    fallbackBio: "Este usuário ainda não preencheu a bio, mas as publicações e viagens já mostram seu estilo.",
     catches: "Capturas",
     trips: "Viagens",
-    follow: "Seguir",
+    friends: "Amigos",
     experience: "Experiência",
     prefers: "Prefere",
     favoriteWater: "Água favorita",
-    recentCatches: "Capturas recentes",
-    emptyCatches: "Este usuário ainda não enviou fotos de capturas.",
+    recentCatches: "Publicações",
+    recentTrips: "Viagens e relatórios",
+    emptyCatches: "Este usuário ainda não adicionou publicações.",
+    emptyTrips: "Este usuário ainda não tem viagens publicadas.",
+    noPhoto: "Sem foto",
     years: (value) => `${value} anos`,
   },
 };
@@ -96,21 +121,65 @@ export default async function PublicProfilePage({
 }) {
   const lang = await getServerLanguage();
   const t = translations[lang];
+  const viewer = await getCurrentUser();
   const { handle } = await params;
 
   const user = await prisma.user.findUnique({
     where: { handle },
     include: {
+      catches: {
+        include: {
+          user: true,
+          place: true,
+          likes: viewer
+            ? {
+                where: { userId: viewer.id },
+                select: { id: true },
+              }
+            : false,
+          reposts: viewer
+            ? {
+                where: { userId: viewer.id },
+                select: { id: true },
+              }
+            : false,
+          _count: {
+            select: {
+              comments: true,
+              likes: true,
+              reposts: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+      },
+      trips: {
+        where: {
+          publishedAt: {
+            not: null,
+          },
+        },
+        include: {
+          place: {
+            include: {
+              photos: {
+                orderBy: { createdAt: "desc" },
+                take: 1,
+              },
+            },
+          },
+        },
+        orderBy: {
+          publishedAt: "desc",
+        },
+        take: 3,
+      },
       _count: {
         select: {
           catches: true,
           trips: true,
         },
-      },
-      catches: {
-        include: { place: true },
-        orderBy: { createdAt: "desc" },
-        take: 3,
       },
     },
   });
@@ -119,18 +188,31 @@ export default async function PublicProfilePage({
     notFound();
   }
 
+  const [friends, isFriend] = await Promise.all([
+    getFriendsForUser(user.id),
+    viewer ? areFriends(viewer.id, user.id) : false,
+  ]);
+  const catches = user.catches.map((catchItem) => ({
+    ...catchItem,
+    likesCount: catchItem._count.likes,
+    commentsCount: catchItem._count.comments,
+    repostsCount: catchItem._count.reposts,
+    likedByViewer: Boolean(catchItem.likes?.length),
+    repostedByViewer: Boolean(catchItem.reposts?.length),
+  }));
+
   return (
-    <div className="flex h-full flex-col pb-24 pt-safe sm:pt-6">
-      <header className="relative z-10 mb-4 flex items-center justify-between px-4">
-        <Link href="/profile" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-white/20">
+    <div className="space-y-5 px-4 pb-8 pt-safe">
+      <header className="flex items-center justify-between">
+        <Link href="/feed" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-white/20">
           <ArrowLeft size={20} />
         </Link>
         <div className="font-semibold text-text-main">{t.profile}</div>
         <div className="w-10" />
       </header>
 
-      <div className="relative -mt-16 sm:mt-0">
-        <div className="h-48 w-full overflow-hidden bg-[linear-gradient(135deg,#0b1520,#17324a)] sm:rounded-t-[34px]">
+      <div className="relative">
+        <div className="h-48 w-full overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,#0b1520,#17324a)]">
           {user.bannerPath ? (
             <img src={withBasePath(user.bannerPath)} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -143,15 +225,15 @@ export default async function PublicProfilePage({
           {user.avatarPath ? (
             <img src={withBasePath(user.avatarPath)} alt={user.name} className="mx-auto h-24 w-24 rounded-full border-4 border-background bg-surface object-cover shadow-2xl" />
           ) : (
-            <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-background bg-gradient-to-br ${user.avatarGradient} text-3xl font-bold text-slate-950 shadow-2xl`}>
-              {user.name.slice(0, 1)}
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-background border-dashed bg-black/20 text-center text-[11px] font-semibold text-text-muted shadow-2xl">
+              {t.noPhoto}
             </div>
           )}
 
           <h1 className="mt-4 font-display text-2xl font-bold text-text-main">{user.name}</h1>
           <p className="text-[15px] font-medium text-primary">@{user.handle}</p>
 
-          <div className="mx-auto mt-4 max-w-[280px] whitespace-pre-wrap text-center text-[14px] leading-relaxed text-text-muted">
+          <div className="mx-auto mt-4 max-w-[300px] whitespace-pre-wrap text-center text-[14px] leading-relaxed text-text-muted">
             {user.bio || t.fallbackBio}
           </div>
 
@@ -164,22 +246,20 @@ export default async function PublicProfilePage({
               <div className="font-display text-[20px] font-bold text-white">{user._count.trips}</div>
               <div className="mt-0.5 text-[10px] uppercase tracking-wider">{t.trips}</div>
             </div>
-            {user.city ? (
-              <div className="rounded-[16px] border border-white/5 bg-white/5 px-4 py-2 text-center shadow-lg backdrop-blur-md">
-                <div className="flex h-[30px] items-center justify-center text-[20px] text-white">
-                  <MapPin size={18} />
-                </div>
-                <div className="mt-0.5 max-w-[75px] truncate px-1 text-[10px] uppercase tracking-wider">{user.city}</div>
-              </div>
-            ) : null}
+            <FriendsDrawer title={t.friends} subtitle={`@${user.handle}`} friends={friends}>
+              <button type="button" className="rounded-[16px] border border-white/5 bg-white/5 px-4 py-2 text-center shadow-lg backdrop-blur-md">
+                <div className="font-display text-[20px] font-bold text-white">{friends.length}</div>
+                <div className="mt-0.5 text-[10px] uppercase tracking-wider">{t.friends}</div>
+              </button>
+            </FriendsDrawer>
           </div>
 
-          <div className="mt-6">
-            <button className="inline-flex w-full items-center justify-center gap-2 rounded-[20px] bg-primary px-8 py-3.5 text-[15px] font-bold text-black shadow-[0_8px_24px_rgba(103,232,178,0.24)] transition-transform hover:bg-primary-strong active:scale-95 sm:w-auto">
-              <UserPlus size={18} />
-              {t.follow}
-            </button>
-          </div>
+          {viewer && viewer.id !== user.id ? (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <FriendToggleButton handle={user.handle} initialIsFriend={isFriend} />
+              <DirectChatButton handle={user.handle} />
+            </div>
+          ) : null}
 
           {user.experienceYears || user.preferredStyles || user.homeWater ? (
             <div className="mx-auto mt-6 grid max-w-[340px] grid-cols-1 gap-3 rounded-[20px] border border-white/5 bg-white/5 p-4 text-left shadow-inner sm:grid-cols-2">
@@ -206,18 +286,16 @@ export default async function PublicProfilePage({
         </div>
       </div>
 
-      <div className="mt-8 px-4">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
-          <Fish size={18} className="text-primary" />
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-lg font-bold text-white">
+          <Trophy size={18} className="text-primary" />
           {t.recentCatches}
-        </h2>
+        </div>
 
-        {user.catches.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2">
-            {user.catches.map((catchItem) => (
-              <div key={catchItem.id} className="group relative aspect-square overflow-hidden rounded-[16px] border border-white/5 bg-surface shadow-lg">
-                <img src={withBasePath(catchItem.imagePath)} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-110" />
-              </div>
+        {catches.length > 0 ? (
+          <div className="space-y-4">
+            {catches.map((catchItem) => (
+              <CatchCard key={catchItem.id} catchItem={catchItem} />
             ))}
           </div>
         ) : (
@@ -225,7 +303,37 @@ export default async function PublicProfilePage({
             {t.emptyCatches}
           </div>
         )}
-      </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-lg font-bold text-white">
+          <CalendarDays size={18} className="text-accent" />
+          {t.recentTrips}
+        </div>
+
+        {user.trips.length > 0 ? (
+          <div className="space-y-4">
+            {user.trips.map((trip) => (
+              <TripReportCard
+                key={trip.id}
+                trip={{
+                  ...trip,
+                  user,
+                  place: {
+                    ...trip.place,
+                    displayImage: trip.place.photos[0]?.imagePath ?? trip.place.coverImage,
+                    fishSpeciesList: trip.place.fishSpecies.split("|").map((item) => item.trim()).filter(Boolean),
+                  },
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[24px] border border-white/10 bg-white/5 py-10 text-center text-[13px] text-text-muted shadow-inner backdrop-blur-md">
+            {t.emptyTrips}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

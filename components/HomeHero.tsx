@@ -375,7 +375,14 @@ export function HomeHero({
       <Drawer.Root open={aiOpen} onOpenChange={setAiOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-md" />
-          <Drawer.Content className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto mt-24 flex max-h-[90vh] max-w-md flex-col rounded-t-[36px] border-t border-white/10 bg-[#0c1218] outline-none">
+          <Drawer.Content
+            className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto mt-24 flex max-h-[90vh] max-w-md flex-col rounded-t-[36px] border-t border-white/10 bg-[#0c1218] outline-none"
+            style={{
+              backgroundImage: `linear-gradient(180deg, rgba(5, 9, 15, 0.76), rgba(5, 9, 15, 0.96)), url('${withBasePath("/modal-backgrounds/profile-panel-bg.png")}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
             <div className="hide-scrollbar flex-1 overflow-y-auto">
               <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-[#0c1218]/90 px-6 py-5 backdrop-blur-xl">
                 <div className="flex items-center gap-2.5">

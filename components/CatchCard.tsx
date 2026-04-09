@@ -22,9 +22,18 @@ type CatchCardProps = {
     likesCount: number;
     likedByViewer: boolean;
     commentsCount: number;
+    repostsCount?: number;
+    repostedByViewer?: boolean;
     isFeatured: boolean;
     aiConfidence: number | null;
     createdAt: Date;
+    repostMeta?: {
+      user: {
+        name: string;
+        handle: string;
+      };
+      createdAt: Date | string;
+    } | null;
     user: {
       name: string;
       handle: string;
@@ -32,6 +41,7 @@ type CatchCardProps = {
       avatarPath?: string | null;
     };
     place: {
+      slug: string;
       name: string;
       city: string;
     };
@@ -100,6 +110,12 @@ export function CatchCard({ catchItem, showUser = true, showActions = true }: Ca
 
   return (
     <article className="mb-8 overflow-hidden bg-background shadow-sm sm:rounded-[32px] sm:border sm:border-white/5 sm:bg-surface-elevated">
+      {catchItem.repostMeta ? (
+        <div className="flex items-center gap-2 px-4 pt-4 text-[13px] font-medium text-text-muted sm:px-5">
+          <span>{catchItem.repostMeta.user.name} поделился этой записью</span>
+        </div>
+      ) : null}
+
       {showUser ? (
         <div className="flex items-center justify-between px-4 py-3.5 sm:px-5">
           <div className="flex w-full items-center gap-3">
@@ -128,7 +144,7 @@ export function CatchCard({ catchItem, showUser = true, showActions = true }: Ca
                 </span>
               </div>
 
-              <Link href="/places" className="group mt-0.5 flex items-center gap-1">
+              <Link href={`/places/${catchItem.place.slug}`} className="group mt-0.5 flex items-center gap-1">
                 <MapPin size={12} className="text-primary" />
                 <span className="truncate text-[12px] font-medium text-text-muted transition-colors group-hover:text-white">
                   {catchItem.place.name}
@@ -179,6 +195,8 @@ export function CatchCard({ catchItem, showUser = true, showActions = true }: Ca
             initialLikesCount={catchItem.likesCount}
             initialCommentsCount={catchItem.commentsCount}
             initiallyLiked={catchItem.likedByViewer}
+            initialRepostsCount={catchItem.repostsCount ?? 0}
+            initiallyReposted={catchItem.repostedByViewer ?? false}
           />
         </div>
       ) : null}

@@ -22,7 +22,7 @@ const translations: TranslationMap<{
 }> = {
   ru: {
     section: "Лента",
-    title: "Сообщество, отчеты и реальные обсуждения",
+    title: "Публикации сообщества",
     posts: "Постов",
     trophies: "Трофеев",
     reports: "Отчетов",
@@ -32,7 +32,7 @@ const translations: TranslationMap<{
   },
   en: {
     section: "Feed",
-    title: "Community, reports, and real conversations",
+    title: "Community posts",
     posts: "Posts",
     trophies: "Trophies",
     reports: "Reports",
@@ -42,7 +42,7 @@ const translations: TranslationMap<{
   },
   es: {
     section: "Feed",
-    title: "Comunidad, reportes y conversaciones reales",
+    title: "Publicaciones de la comunidad",
     posts: "Publicaciones",
     trophies: "Trofeos",
     reports: "Reportes",
@@ -52,7 +52,7 @@ const translations: TranslationMap<{
   },
   fr: {
     section: "Feed",
-    title: "Communauté, rapports et vraies discussions",
+    title: "Publications de la communauté",
     posts: "Posts",
     trophies: "Trophées",
     reports: "Rapports",
@@ -62,7 +62,7 @@ const translations: TranslationMap<{
   },
   pt: {
     section: "Feed",
-    title: "Comunidade, relatórios e conversas reais",
+    title: "Publicações da comunidade",
     posts: "Posts",
     trophies: "Troféus",
     reports: "Relatórios",
@@ -110,8 +110,8 @@ export default async function FeedPage() {
       {feedItems.length > 0 ? (
         <div className="space-y-4">
           {feedItems.map((item) =>
-            item.type === "catch" ? (
-              <CatchCard key={item.catchItem.id} catchItem={item.catchItem} />
+            item.type === "catch" || item.type === "repost" ? (
+              <CatchCard key={`${item.type}-${item.catchItem.id}-${item.sortDate.toString()}`} catchItem={item.catchItem} />
             ) : (
               <TripReportCard key={item.tripItem.id} trip={item.tripItem} />
             ),

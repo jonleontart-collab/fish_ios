@@ -103,7 +103,7 @@ export async function POST(req: Request) {
         preferredLanguage: language,
         passwordHash: hashPassword(safePassword),
         avatarGradient: DEFAULT_AVATAR_GRADIENT,
-        avatarPath: "/images/vatar-2.jpg",
+        avatarPath: null,
       },
     });
 

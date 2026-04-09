@@ -6,7 +6,7 @@ import { Drawer } from "vaul";
 
 import { useLanguage } from "@/components/LanguageProvider";
 import { useLocation } from "@/components/LocationProvider";
-import { apiPath } from "@/lib/app-paths";
+import { apiPath, withBasePath } from "@/lib/app-paths";
 import { type FishingEvent } from "@/lib/fishing-events";
 import { formatShortDate } from "@/lib/format";
 import { type TranslationMap } from "@/lib/i18n";
@@ -24,58 +24,58 @@ const translations: TranslationMap<{
 }> = {
   ru: {
     section: "Мероприятия",
-    title: "Рыболовные события по стране",
+    title: "Рыболовные события рядом",
     loading: "Загружаем ближайшие события...",
     resolving: "Сначала определим страну и город по геолокации или IP.",
     empty: "Пока не удалось собрать события. Попробуй обновить локацию чуть позже.",
     openAll: "Все события",
-    allEvents: "Список всех событий",
+    allEvents: "Календарь событий",
     openSource: "Открыть источник",
-    fallback: "Демо-подборка",
+    fallback: "Подборка",
   },
   en: {
     section: "Events",
-    title: "Fishing events in your country",
+    title: "Fishing events nearby",
     loading: "Loading nearby events...",
     resolving: "First we need your country and city from geolocation or IP.",
     empty: "Could not collect events yet. Try refreshing your location later.",
     openAll: "All events",
-    allEvents: "All events",
+    allEvents: "Event calendar",
     openSource: "Open source",
-    fallback: "Demo list",
+    fallback: "Selection",
   },
   es: {
     section: "Eventos",
-    title: "Eventos de pesca en tu país",
+    title: "Eventos de pesca cerca de ti",
     loading: "Cargando eventos cercanos...",
     resolving: "Primero necesitamos tu país y ciudad por geolocalización o IP.",
     empty: "Todavía no se pudieron obtener eventos. Intenta actualizar la ubicación más tarde.",
     openAll: "Todos los eventos",
-    allEvents: "Lista completa",
+    allEvents: "Calendario de eventos",
     openSource: "Abrir fuente",
-    fallback: "Lista demo",
+    fallback: "Selección",
   },
   fr: {
     section: "Événements",
-    title: "Événements de pêche dans votre pays",
+    title: "Événements de pêche proches",
     loading: "Chargement des événements proches...",
     resolving: "Nous devons d'abord déterminer votre pays et votre ville via la géolocalisation ou l'IP.",
     empty: "Impossible de récupérer les événements pour le moment. Réessayez plus tard.",
     openAll: "Tous les événements",
-    allEvents: "Liste complète",
+    allEvents: "Calendrier des événements",
     openSource: "Ouvrir la source",
-    fallback: "Sélection démo",
+    fallback: "Sélection",
   },
   pt: {
     section: "Eventos",
-    title: "Eventos de pesca no seu país",
+    title: "Eventos de pesca por perto",
     loading: "Carregando eventos próximos...",
     resolving: "Primeiro precisamos do seu país e cidade pela geolocalização ou IP.",
     empty: "Ainda não foi possível obter os eventos. Tente atualizar a localização mais tarde.",
     openAll: "Todos os eventos",
-    allEvents: "Lista completa",
+    allEvents: "Calendário de eventos",
     openSource: "Abrir fonte",
-    fallback: "Lista demo",
+    fallback: "Seleção",
   },
 };
 
@@ -88,12 +88,14 @@ function EventRow({
   lang: keyof typeof translations;
   openSource: string;
 }) {
+  const badgeLabel = event.source === "fallback" ? translations[lang].fallback : "Live";
+
   const content = (
     <div className="flex items-center justify-between gap-3 rounded-[22px] border border-border-subtle bg-white/4 px-4 py-4 transition hover:bg-white/8">
       <div className="min-w-0">
         <div className="mb-1 inline-flex items-center gap-2 rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent">
           <Sparkles size={12} />
-          {event.source === "fallback" ? translations[lang].fallback : "Gemini"}
+          {badgeLabel}
         </div>
         <div className="truncate text-base font-semibold text-text-main">{event.title}</div>
         <div className="mt-1 flex items-center gap-2 text-sm text-text-muted">
@@ -107,7 +109,7 @@ function EventRow({
           <MapPin size={14} />
           <span className="truncate">
             {[event.city, event.country].filter(Boolean).join(", ")}
-            {event.venue ? ` · ${event.venue}` : ""}
+            {event.venue ? `, ${event.venue}` : ""}
           </span>
         </div>
       </div>
@@ -233,7 +235,14 @@ export function HomeFishingEventsWidget() {
       <Drawer.Root open={open} onOpenChange={setOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-md" />
-          <Drawer.Content className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto mt-24 flex max-h-[90vh] max-w-md flex-col rounded-t-[36px] border-t border-white/10 bg-[#0c1218] outline-none">
+          <Drawer.Content
+            className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto mt-24 flex max-h-[90vh] max-w-md flex-col rounded-t-[36px] border-t border-white/10 bg-[#0c1218] outline-none"
+            style={{
+              backgroundImage: `linear-gradient(180deg, rgba(5, 9, 15, 0.76), rgba(5, 9, 15, 0.96)), url('${withBasePath("/modal-backgrounds/notification-center-bg.png")}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
             <div className="hide-scrollbar flex-1 overflow-y-auto">
               <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-[#0c1218]/90 px-6 py-5 backdrop-blur-xl">
                 <div>

@@ -6,7 +6,8 @@ import { Drawer } from "vaul";
 import { Loader2, MessagesSquare, Plus, X } from "lucide-react";
 
 import { useLanguage } from "@/components/LanguageProvider";
-import { apiPath } from "@/lib/app-paths";
+import { useToast } from "@/components/ToastProvider";
+import { apiPath, withBasePath } from "@/lib/app-paths";
 import type { TranslationMap } from "@/lib/i18n";
 
 const translations: TranslationMap<{
@@ -86,6 +87,7 @@ const translations: TranslationMap<{
 export function CreateChatForm() {
   const router = useRouter();
   const { lang } = useLanguage();
+  const { pushToast } = useToast();
   const t = translations[lang];
   const [form, setForm] = useState({
     title: "",
@@ -133,12 +135,20 @@ export function CreateChatForm() {
         inviteHandles: "",
       });
       setOpen(false);
+      pushToast({
+        tone: "success",
+        title: "Чат создан",
+      });
       startTransition(() => {
         router.push(`/chats/${created.slug}`);
         router.refresh();
       });
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : t.genericError);
+      pushToast({
+        tone: "error",
+        title: "Не удалось создать чат",
+      });
     }
   }
 
@@ -154,7 +164,14 @@ export function CreateChatForm() {
       <Drawer.Root open={open} onOpenChange={setOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm" />
-          <Drawer.Content className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto mt-24 flex max-h-[90vh] max-w-md flex-col rounded-t-[32px] border-t border-[rgba(255,255,255,0.05)] bg-surface-strong outline-none">
+          <Drawer.Content
+            className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto mt-24 flex max-h-[90vh] max-w-md flex-col rounded-t-[32px] border-t border-[rgba(255,255,255,0.05)] bg-surface-strong outline-none"
+            style={{
+              backgroundImage: `linear-gradient(180deg, rgba(5, 9, 15, 0.82), rgba(5, 9, 15, 0.98)), url('${withBasePath("/modal-backgrounds/chat-sheet-bg.png")}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
             <div className="hide-scrollbar flex-1 overflow-y-auto rounded-t-[32px] p-5 pb-safe">
               <div className="mx-auto mb-6 h-1.5 w-12 flex-shrink-0 rounded-full bg-[rgba(255,255,255,0.2)]" />
 

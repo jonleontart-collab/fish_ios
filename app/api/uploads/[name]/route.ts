@@ -1,4 +1,4 @@
-import { readStoredImage } from "@/lib/storage";
+import { readStoredFile } from "@/lib/storage";
 
 export async function GET(
   _request: Request,
@@ -9,7 +9,7 @@ export async function GET(
   const { name } = await context.params;
 
   try {
-    const file = await readStoredImage(name);
+    const file = await readStoredFile(name);
 
     return new Response(file.buffer, {
       headers: {

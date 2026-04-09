@@ -1,6 +1,7 @@
 import { subDays } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { splitPipeList } from "@/lib/format";
+import { getFriendsForUser } from "@/lib/social";
 
 const REAL_PLACE_FILTER = {
   source: {
@@ -61,9 +62,11 @@ function mapCatchWithEngagement<
   T extends {
     likesCount?: number;
     likes?: Array<{ id: string }>;
+    reposts?: Array<{ id: string }>;
     _count?: {
       comments: number;
       likes: number;
+      reposts?: number;
     };
   },
 >(item: T) {
@@ -72,6 +75,8 @@ function mapCatchWithEngagement<
     commentsCount: item._count?.comments ?? 0,
     likesCount: item._count?.likes ?? item.likesCount ?? 0,
     likedByViewer: Boolean(item.likes?.length),
+    repostsCount: item._count?.reposts ?? 0,
+    repostedByViewer: Boolean(item.reposts?.length),
   };
 }
 
@@ -106,6 +111,19 @@ async function getJoinedChats(userId: string, take?: number) {
     },
     include: {
       owner: true,
+      members: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              handle: true,
+              avatarGradient: true,
+              avatarPath: true,
+            },
+          },
+        },
+      },
       _count: {
         select: {
           members: true,
@@ -203,10 +221,19 @@ export async function getDashboardData() {
             id: true,
           },
         },
+        reposts: {
+          where: {
+            userId: user.id,
+          },
+          select: {
+            id: true,
+          },
+        },
         _count: {
           select: {
             comments: true,
             likes: true,
+            reposts: true,
           },
         },
       },
@@ -312,7 +339,7 @@ export async function getDashboardData() {
 
 export async function getFeedPageData() {
   const user = await getRequiredCurrentUser();
-  const [catchesRaw, tripReports] = await Promise.all([
+  const [catchesRaw, tripReports, catchReposts] = await Promise.all([
     prisma.catch.findMany({
       where: {
         place: REAL_PLACE_FILTER,
@@ -328,10 +355,19 @@ export async function getFeedPageData() {
             id: true,
           },
         },
+        reposts: {
+          where: {
+            userId: user.id,
+          },
+          select: {
+            id: true,
+          },
+        },
         _count: {
           select: {
             comments: true,
             likes: true,
+            reposts: true,
           },
         },
       },
@@ -365,6 +401,44 @@ export async function getFeedPageData() {
       },
       take: 20,
     }),
+    prisma.catchRepost.findMany({
+      include: {
+        user: true,
+        catch: {
+          include: {
+            user: true,
+            place: true,
+            likes: {
+              where: {
+                userId: user.id,
+              },
+              select: {
+                id: true,
+              },
+            },
+            reposts: {
+              where: {
+                userId: user.id,
+              },
+              select: {
+                id: true,
+              },
+            },
+            _count: {
+              select: {
+                comments: true,
+                likes: true,
+                reposts: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 20,
+    }),
   ]);
 
   const catches = catchesRaw.map((item) => mapCatchWithEngagement(item));
@@ -380,6 +454,17 @@ export async function getFeedPageData() {
       tripItem: {
         ...item,
         place: mapPlaceLists(withDisplayImage(item.place)),
+      },
+    })),
+    ...catchReposts.map((item) => ({
+      type: "repost" as const,
+      sortDate: item.createdAt,
+      catchItem: {
+        ...mapCatchWithEngagement(item.catch),
+        repostMeta: {
+          user: item.user,
+          createdAt: item.createdAt,
+        },
       },
     })),
   ].sort((left, right) => right.sortDate.getTime() - left.sortDate.getTime());
@@ -414,10 +499,19 @@ export async function getCatchPostData(catchId: string) {
           id: true,
         },
       },
+      reposts: {
+        where: {
+          userId: user.id,
+        },
+        select: {
+          id: true,
+        },
+      },
       _count: {
         select: {
           comments: true,
           likes: true,
+          reposts: true,
         },
       },
     },
@@ -503,10 +597,21 @@ export async function getPlaceDetails(slug: string) {
                 },
               }
             : false,
+          reposts: user
+            ? {
+                where: {
+                  userId: user.id,
+                },
+                select: {
+                  id: true,
+                },
+              }
+            : false,
           _count: {
             select: {
               comments: true,
               likes: true,
+              reposts: true,
             },
           },
         },
@@ -544,7 +649,7 @@ export async function getPlaceOptions() {
 
 export async function getChatsInboxData() {
   const user = await getRequiredCurrentUser();
-  const [chats, discoverableChats] = await Promise.all([
+  const [chats, discoverableChats, friends] = await Promise.all([
     getJoinedChats(user.id),
     prisma.chat.findMany({
       where: {
@@ -578,12 +683,14 @@ export async function getChatsInboxData() {
       },
       take: 10,
     }),
+    getFriendsForUser(user.id),
   ]);
 
   return {
     user,
     chats,
     discoverableChats,
+    friends,
   };
 }
 
@@ -721,14 +828,16 @@ export async function getTripsPageData() {
 export async function getProfilePageData() {
   const user = await getRequiredCurrentUser();
 
-  const [catchesRaw, trips, placePhotos, commentsCount, inventoryItems, shoppingItems, catchCount, tripCount, friendsRaw] =
+  const [catchesRaw, trips, placePhotos, commentsCount, inventoryItems, shoppingItems, catchCount, tripCount, friends] =
     await Promise.all([
       prisma.catch.findMany({
         where: { userId: user.id, place: REAL_PLACE_FILTER },
         include: {
-          user: true, place: true, 
+          user: true,
+          place: true,
           likes: { where: { userId: user.id }, select: { id: true } },
-          _count: { select: { comments: true, likes: true } }
+          reposts: { where: { userId: user.id }, select: { id: true } },
+          _count: { select: { comments: true, likes: true, reposts: true } },
         },
         orderBy: { createdAt: "desc" },
         take: 12,
@@ -749,10 +858,7 @@ export async function getProfilePageData() {
       }),
       prisma.catch.count({ where: { userId: user.id, place: REAL_PLACE_FILTER } }),
       prisma.trip.count({ where: { userId: user.id, place: REAL_PLACE_FILTER } }),
-      prisma.userFriend.findMany({
-        where: { userId: user.id, status: "ACCEPTED" },
-        include: { friend: true }
-      })
+      getFriendsForUser(user.id),
     ]);
 
   const catches = catchesRaw.map((item) => mapCatchWithEngagement(item));
@@ -763,7 +869,7 @@ export async function getProfilePageData() {
     trips: trips.map((trip) => ({ ...trip, place: mapPlaceLists(withDisplayImage(trip.place)) })),
     inventoryItems,
     shoppingItems,
-    friends: friendsRaw.map(f => f.friend),
+    friends,
     stats: {
       catches: catchCount,
       trips: tripCount,
@@ -771,7 +877,7 @@ export async function getProfilePageData() {
       comments: commentsCount,
       inventory: inventoryItems.length,
       pendingShopping: shoppingItems.filter((item) => item.status === "PLANNED").length,
-      friends: friendsRaw.length
+      friends: friends.length,
     },
   };
 }

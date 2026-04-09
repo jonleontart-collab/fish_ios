@@ -10,6 +10,9 @@ const MIME_TO_EXTENSION: Record<string, string> = {
   "image/webp": "webp",
   "image/heic": "heic",
   "image/heif": "heif",
+  "video/mp4": "mp4",
+  "video/quicktime": "mov",
+  "video/webm": "webm",
 };
 
 const EXTENSION_TO_MIME: Record<string, string> = {
@@ -19,6 +22,9 @@ const EXTENSION_TO_MIME: Record<string, string> = {
   webp: "image/webp",
   heic: "image/heic",
   heif: "image/heif",
+  mp4: "video/mp4",
+  mov: "video/quicktime",
+  webm: "video/webm",
 };
 
 function sanitizeBaseName(name: string) {
@@ -45,10 +51,10 @@ export function getImageExtension(mimeType: string, originalName: string) {
   return "jpg";
 }
 
-export async function saveImageFile(file: File) {
+export async function saveStoredFile(file: File, fallbackStem = "upload") {
   const bytes = Buffer.from(await file.arrayBuffer());
   const extension = getImageExtension(file.type, file.name);
-  const stem = sanitizeBaseName(file.name) || "catch";
+  const stem = sanitizeBaseName(file.name) || fallbackStem;
   const fileName = `${stem}-${crypto.randomUUID()}.${extension}`;
 
   await mkdir(STORAGE_DIR, { recursive: true });
@@ -60,7 +66,15 @@ export async function saveImageFile(file: File) {
   };
 }
 
-export async function readStoredImage(fileName: string) {
+export async function saveImageFile(file: File) {
+  return saveStoredFile(file, "image");
+}
+
+export async function saveMediaFile(file: File) {
+  return saveStoredFile(file, "media");
+}
+
+export async function readStoredFile(fileName: string) {
   const safeFileName = path.basename(fileName);
   const extension = safeFileName.split(".").pop()?.toLowerCase() ?? "jpg";
   const contentType = EXTENSION_TO_MIME[extension] ?? "application/octet-stream";
@@ -70,4 +84,8 @@ export async function readStoredImage(fileName: string) {
     buffer,
     contentType,
   };
+}
+
+export async function readStoredImage(fileName: string) {
+  return readStoredFile(fileName);
 }

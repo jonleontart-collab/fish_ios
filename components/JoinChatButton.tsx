@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, LogIn } from "lucide-react";
 
 import { useLanguage } from "@/components/LanguageProvider";
+import { useToast } from "@/components/ToastProvider";
 import { apiPath } from "@/lib/app-paths";
 import type { TranslationMap } from "@/lib/i18n";
 
@@ -19,6 +20,7 @@ const translations: TranslationMap<{ joining: string; join: string }> = {
 export function JoinChatButton({ chatId }: { chatId: string }) {
   const router = useRouter();
   const { lang } = useLanguage();
+  const { pushToast } = useToast();
   const t = translations[lang];
   const [isPending, startTransition] = useTransition();
 
@@ -28,10 +30,18 @@ export function JoinChatButton({ chatId }: { chatId: string }) {
     });
 
     if (!response.ok) {
+      pushToast({
+        tone: "error",
+        title: "Не удалось вступить в чат",
+      });
       return;
     }
 
     const payload = (await response.json()) as { slug: string };
+    pushToast({
+      tone: "success",
+      title: "Чат открыт",
+    });
     startTransition(() => {
       router.push(`/chats/${payload.slug}`);
       router.refresh();

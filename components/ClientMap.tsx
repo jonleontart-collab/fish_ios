@@ -101,10 +101,12 @@ function MapViewportController({
   places,
   focusUserRequest,
   routeTo,
+  fitSignal,
 }: {
   places: MapPlace[];
   focusUserRequest: number;
   routeTo?: { latitude: number; longitude: number } | null;
+  fitSignal?: number;
 }) {
   const map = useMap();
   const { location } = useLocation();
@@ -149,7 +151,7 @@ function MapViewportController({
     map.fitBounds(points, {
       padding: [32, 32],
     });
-  }, [focusUserRequest, location, map, places, routeTo]);
+  }, [fitSignal, focusUserRequest, location, map, places, routeTo]);
 
   return null;
 }
@@ -181,11 +183,13 @@ export default function ClientMap({
   onPlaceSelect,
   routeTo,
   onViewportChange,
+  fitSignal,
 }: {
   places: MapPlace[];
   onPlaceSelect?: (place: MapPlace) => void;
   routeTo?: { latitude: number; longitude: number } | null;
   onViewportChange?: (center: { latitude: number; longitude: number }) => void;
+  fitSignal?: number;
 }) {
   const { lang } = useLanguage();
   const { location, status, error, refreshLocation } = useLocation();
@@ -212,7 +216,7 @@ export default function ClientMap({
 
       <MapContainer center={center as [number, number]} zoom={9} scrollWheelZoom={false} zoomControl={false} className="absolute inset-0 z-0 h-full w-full bg-background">
         <ZoomControl position="bottomright" />
-        <MapViewportController places={places} focusUserRequest={0} routeTo={routeTo} />
+        <MapViewportController places={places} focusUserRequest={0} routeTo={routeTo} fitSignal={fitSignal} />
         <MapViewportReporter onViewportChange={onViewportChange} />
 
         <TileLayer
