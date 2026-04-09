@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: errors[requestedLanguage].missing }, { status: 400 });
     }
 
-    if (safeHandle === "fishflow_support") {
+    if (safeHandle === "fishflow-support") {
       await ensureSupportUser();
     }
 

@@ -1,15 +1,30 @@
 import { hashPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const SUPPORT_HANDLE = "fishflow_support";
+const SUPPORT_HANDLE = "fishflow-support";
+const LEGACY_SUPPORT_HANDLE = "fishflow_support";
 const SUPPORT_PASSWORD = process.env.SUPPORT_PASSWORD ?? "support12345";
 
 export async function ensureSupportUser() {
-  const existing = await prisma.user.findUnique({
-    where: { handle: SUPPORT_HANDLE },
+  const existing = await prisma.user.findFirst({
+    where: {
+      handle: {
+        in: [SUPPORT_HANDLE, LEGACY_SUPPORT_HANDLE],
+      },
+    },
   });
 
   if (existing) {
+    if (existing.handle !== SUPPORT_HANDLE) {
+      return prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          handle: SUPPORT_HANDLE,
+          isSupport: true,
+        },
+      });
+    }
+
     return existing;
   }
 
