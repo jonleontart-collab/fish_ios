@@ -52,7 +52,7 @@ export default async function TripsPage() {
         {t.back}
       </Link>
 
-      <header className="pr-bell-safe space-y-2">
+      <header className="space-y-2">
         <h1 className="font-display text-[30px] font-semibold tracking-tight text-text-main">{t.title}</h1>
       </header>
 

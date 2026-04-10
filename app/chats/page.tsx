@@ -146,7 +146,7 @@ export default async function ChatsPage() {
 
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
-      <header className="pr-bell-safe flex items-start justify-between gap-4">
+      <header className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="font-display text-[32px] font-bold tracking-tight text-white drop-shadow-sm">{t.title}</h1>
         </div>

@@ -151,10 +151,6 @@ img {
   top: max(1rem, env(safe-area-inset-top));
 }
 
-.pr-bell-safe {
-  padding-right: calc(4rem + env(safe-area-inset-right));
-}
-
 .hide-scrollbar {
   scrollbar-width: none;
 }

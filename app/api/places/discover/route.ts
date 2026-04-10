@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { splitPipeList } from "@/lib/format";
 import { distanceKmBetween } from "@/lib/geo";
 import { logger } from "@/lib/logger";
 import {
@@ -9,7 +10,6 @@ import {
   upsertDiscoveredPlaces,
 } from "@/lib/place-search";
 import { prisma } from "@/lib/prisma";
-import { splitPipeList } from "@/lib/format";
 
 const discoverSchema = z.object({
   latitude: z.number().min(-90).max(90),
@@ -55,11 +55,7 @@ type DbPlace = {
   };
 };
 
-function mapPlaceForClient(
-  place: DbPlace,
-  latitude: number,
-  longitude: number,
-) {
+function mapPlaceForClient(place: DbPlace, latitude: number, longitude: number) {
   return {
     ...place,
     displayImage: place.photos[0]?.imagePath ?? place.coverImage,
@@ -104,136 +100,163 @@ function matchesQuery(
 }
 
 export async function POST(request: Request) {
-  const payload = await request.json();
-  const parsed = discoverSchema.safeParse(payload);
+  let stage = "request";
 
-  if (!parsed.success) {
-    return Response.json({ error: "Некорректные координаты для поиска мест." }, { status: 400 });
-  }
+  try {
+    const payload = await request.json();
+    const parsed = discoverSchema.safeParse(payload);
 
-  const {
-    latitude,
-    longitude,
-    city,
-    region,
-    country,
-    query: rawQuery,
-    areaLatitude,
-    areaLongitude,
-    radiusKm: requestedRadius,
-  } = parsed.data;
-  const query = rawQuery?.trim() ?? "";
-  const radiusKm = requestedRadius ?? PLACE_SEARCH_RADIUS_KM;
-  const viewerCenter = { latitude, longitude };
-  const areaCenter =
-    typeof areaLatitude === "number" && typeof areaLongitude === "number"
-      ? { latitude: areaLatitude, longitude: areaLongitude }
-      : viewerCenter;
+    if (!parsed.success) {
+      return Response.json({ error: "Некорректные координаты для поиска мест." }, { status: 400 });
+    }
 
-  logger.info("Discover API", "incoming", {
-    latitude,
-    longitude,
-    city,
-    region,
-    country,
-    query,
-    areaCenter,
-    radiusKm,
-  });
+    const {
+      latitude,
+      longitude,
+      city,
+      region,
+      country,
+      query: rawQuery,
+      areaLatitude,
+      areaLongitude,
+      radiusKm: requestedRadius,
+    } = parsed.data;
+    const query = rawQuery?.trim() ?? "";
+    const radiusKm = requestedRadius ?? PLACE_SEARCH_RADIUS_KM;
+    const viewerCenter = { latitude, longitude };
+    const areaCenter =
+      typeof areaLatitude === "number" && typeof areaLongitude === "number"
+        ? { latitude: areaLatitude, longitude: areaLongitude }
+        : viewerCenter;
 
-  const parserDiscovered = await searchPlacesViaApify({
-    query,
-    center: areaCenter,
-    radiusKm,
-    viewerCity: city,
-    viewerRegion: region,
-    viewerCountry: country,
-  });
-
-  if (parserDiscovered.length > 0) {
-    await upsertDiscoveredPlaces({
-      places: parserDiscovered,
-      distanceOrigin: areaCenter,
+    logger.info("Discover API", "incoming", {
+      latitude,
+      longitude,
+      city,
+      region,
+      country,
+      query,
+      areaCenter,
+      radiusKm,
     });
+
+    stage = "parser";
+    const parserDiscovered = await searchPlacesViaApify({
+      query,
+      center: areaCenter,
+      radiusKm,
+      viewerCity: city,
+      viewerRegion: region,
+      viewerCountry: country,
+    });
+
+    if (parserDiscovered.length > 0) {
+      stage = "save";
+      await upsertDiscoveredPlaces({
+        places: parserDiscovered,
+        distanceOrigin: areaCenter,
+      });
+    }
+
+    stage = "database";
+    const places = await prisma.place.findMany({
+      where: {
+        source: {
+          not: "SEEDED",
+        },
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            handle: true,
+          },
+        },
+        photos: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+        _count: {
+          select: {
+            catches: true,
+            photos: true,
+          },
+        },
+      },
+    });
+
+    const localMatches = query ? places.filter((place) => matchesQuery(place, query)) : [];
+
+    stage = "response";
+    const searchAnchor = getSearchAnchor({
+      viewer: viewerCenter,
+      areaCenter,
+      candidates: [...parserDiscovered, ...localMatches],
+    });
+    const matchedSlugs = new Set(
+      localMatches.map((place) => place.slug).concat(
+        parserDiscovered.map((place) => place.name.toLowerCase()),
+      ),
+    );
+
+    const nearbyPlaces = places
+      .map((place) => mapPlaceForClient(place, searchAnchor.latitude, searchAnchor.longitude))
+      .filter((place) => {
+        if (place.distanceKm > radiusKm) {
+          return false;
+        }
+
+        if (!query) {
+          return true;
+        }
+
+        return matchesQuery(place, query) || matchedSlugs.has(place.slug) || matchedSlugs.has(place.name.toLowerCase());
+      })
+      .sort((left, right) => {
+        if (left.distanceKm !== right.distanceKm) {
+          return left.distanceKm - right.distanceKm;
+        }
+
+        return right.rating - left.rating;
+      })
+      .slice(0, 40);
+
+    logger.info("Discover API", "result", {
+      query,
+      discoveredCount: parserDiscovered.length,
+      nearbyCount: nearbyPlaces.length,
+      searchAnchor,
+      sample: nearbyPlaces.slice(0, 3).map((place) => ({
+        name: place.name,
+        source: place.source,
+        distanceKm: place.distanceKm,
+      })),
+    });
+
+    return Response.json({
+      places: nearbyPlaces,
+      discovered: parserDiscovered.length,
+      radiusKm,
+      searchAnchor,
+    });
+  } catch (error) {
+    logger.error("Discover API", `failed at ${stage}`, error);
+
+    const errorMap: Record<string, string> = {
+      parser: "Парсер мест временно не ответил.",
+      save: "Места нашли, но не удалось сохранить их в базе.",
+      database: "Места нашли, но база не отдала список для карты.",
+      response: "Места нашли, но не удалось собрать ответ для карты.",
+      request: "Поиск мест временно не завершился.",
+    };
+
+    return Response.json(
+      {
+        error: errorMap[stage] ?? "Поиск мест временно не завершился.",
+        details: error instanceof Error ? error.message : undefined,
+      },
+      { status: 500 },
+    );
   }
-
-  const places = await prisma.place.findMany({
-    where: {
-      source: {
-        not: "SEEDED",
-      },
-    },
-    include: {
-      createdBy: {
-        select: {
-          id: true,
-          name: true,
-          handle: true,
-        },
-      },
-      photos: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-      },
-      _count: {
-        select: {
-          catches: true,
-          photos: true,
-        },
-      },
-    },
-  });
-
-  const localMatches = query ? places.filter((place) => matchesQuery(place, query)) : [];
-  const searchAnchor = getSearchAnchor({
-    viewer: viewerCenter,
-    areaCenter,
-    candidates: [...parserDiscovered, ...localMatches],
-  });
-  const matchedSlugs = new Set(
-    localMatches.map((place) => place.slug).concat(
-      parserDiscovered.map((place) => place.name.toLowerCase()),
-    ),
-  );
-
-  const nearbyPlaces = places
-    .map((place) => mapPlaceForClient(place, searchAnchor.latitude, searchAnchor.longitude))
-    .filter((place) => {
-      if (place.distanceKm > radiusKm) {
-        return false;
-      }
-
-      if (!query) {
-        return true;
-      }
-
-      return matchesQuery(place, query) || matchedSlugs.has(place.slug) || matchedSlugs.has(place.name.toLowerCase());
-    })
-    .sort((left, right) => {
-      if (left.distanceKm !== right.distanceKm) {
-        return left.distanceKm - right.distanceKm;
-      }
-
-      return right.rating - left.rating;
-    })
-    .slice(0, 40);
-
-  logger.info("Discover API", "result", {
-    query,
-    discoveredCount: parserDiscovered.length,
-    nearbyCount: nearbyPlaces.length,
-    searchAnchor,
-    sample: nearbyPlaces.slice(0, 3).map((place) => ({
-      name: place.name,
-      source: place.source,
-      distanceKm: place.distanceKm,
-    })),
-  });
-
-  return Response.json({
-    places: nearbyPlaces,
-    discovered: parserDiscovered.length,
-    radiusKm,
-    searchAnchor,
-  });
 }

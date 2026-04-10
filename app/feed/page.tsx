@@ -124,7 +124,7 @@ export default async function FeedPage() {
 
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
-      <header className="pr-bell-safe space-y-4">
+      <header className="space-y-4">
         <SectionHeader
           title={t.title}
           action={

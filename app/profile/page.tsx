@@ -203,7 +203,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
-      <div className="pr-bell-safe flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-text-muted">
           <ArrowLeft size={16} />
           {t.back}

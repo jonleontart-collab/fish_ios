@@ -304,19 +304,49 @@ async function requestNearbyPlaces(location: {
   areaCenter?: { latitude: number; longitude: number } | null;
   radiusKm?: number;
 }) {
-  const response = await fetch(apiPath("/api/places/discover"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ...location,
-      query: options?.query?.trim() || null,
-      areaLatitude: options?.areaCenter?.latitude ?? null,
-      areaLongitude: options?.areaCenter?.longitude ?? null,
-      radiusKm: options?.radiusKm ?? 200,
-    }),
+  const payload = JSON.stringify({
+    ...location,
+    query: options?.query?.trim() || null,
+    areaLatitude: options?.areaCenter?.latitude ?? null,
+    areaLongitude: options?.areaCenter?.longitude ?? null,
+    radiusKm: options?.radiusKm ?? 200,
   });
-  if (!response.ok) throw new Error("Discovery failed");
-  return (await response.json()) as { places: ExplorePlace[] };
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetch(apiPath("/api/places/discover"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      });
+
+      if (!response.ok) {
+        let message = `Поиск не завершился (${response.status})`;
+
+        try {
+          const errorPayload = (await response.json()) as { error?: string; details?: string };
+          message = errorPayload.error || errorPayload.details || message;
+        } catch {
+          const rawText = await response.text().catch(() => "");
+          if (rawText.trim()) {
+            message = rawText.trim();
+          }
+        }
+
+        throw new Error(message);
+      }
+
+      return (await response.json()) as { places: ExplorePlace[] };
+    } catch (error) {
+      if (attempt === 1) {
+        throw error;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 450));
+    }
+  }
+
+  throw new Error("Поиск мест не завершился.");
 }
 
 export function ExploreShell({ places }: { places: ExplorePlace[] }) {
@@ -383,11 +413,12 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
           description: t.nothingFoundDescription,
         });
       }
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Проверь запрос и попробуй ещё раз через пару секунд.";
       pushToast({
         tone: "error",
         title: "Поиск мест не сработал",
-        description: "Проверь запрос или попробуй еще раз через пару секунд.",
+        description: message,
       });
     } finally {
       setIsScanning(false);
@@ -452,7 +483,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
       {/* Search Header - Fixed at Top */}
       <div className={`fixed top-0 inset-x-0 z-[100] pt-safe px-4 pb-2 transition-all ${view === "list" ? "bg-background/90 backdrop-blur-xl border-b border-white/5" : "bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none"}`}>
          <div className="pointer-events-auto space-y-3 mt-2">
-            <div className="relative pr-16">
+            <div className="relative">
               <input 
                 type="text" 
                 placeholder={t.searchPlaceholder}
@@ -468,7 +499,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
               />
               <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
               
-              <button suppressHydrationWarning onClick={() => void scanNearby({ query })} disabled={!location || isScanning} className="absolute right-[4.25rem] top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-primary hover:text-black transition disabled:opacity-50">
+              <button suppressHydrationWarning onClick={() => void scanNearby({ query })} disabled={!location || isScanning} className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-primary hover:text-black transition disabled:opacity-50">
                 {isScanning ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               </button>
             </div>
