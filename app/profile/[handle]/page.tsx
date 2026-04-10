@@ -262,7 +262,7 @@ export default async function PublicProfilePage({
 
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
-      <header className="flex items-center justify-between">
+      <header className="pr-bell-safe flex items-center justify-between">
         <Link
           href="/feed"
           className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-white/20"

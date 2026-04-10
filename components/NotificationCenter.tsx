@@ -61,6 +61,8 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
   const [actionKey, setActionKey] = useState("");
   const [friendRequests, setFriendRequests] = useState<NotificationRequest[]>([]);
   const [chats, setChats] = useState<NotificationChat[]>([]);
+  const notificationCount =
+    friendRequests.length + chats.filter((chat) => chat.messages[0] && chat.messages[0].user.id !== currentUserId).length;
 
   async function loadNotifications() {
     setLoading(true);
@@ -135,20 +137,22 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
 
   return (
     <Drawer.Root open={open} onOpenChange={setOpen}>
-      <Drawer.Trigger asChild>
-        <button
-          type="button"
-          className="fixed right-4 top-safe z-[1200] inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/45 text-white shadow-[0_14px_36px_rgba(0,0,0,0.35)] backdrop-blur-xl transition hover:bg-black/60"
-          aria-label="Notifications"
-        >
-          <Bell size={18} />
-          {friendRequests.length > 0 ? (
-            <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-slate-950">
-              {friendRequests.length > 9 ? "9+" : friendRequests.length}
-            </span>
-          ) : null}
-        </button>
-      </Drawer.Trigger>
+      <div className="pointer-events-none fixed inset-x-0 top-safe z-[1200] mx-auto flex w-full max-w-md justify-end px-4">
+        <Drawer.Trigger asChild>
+          <button
+            type="button"
+            className="pointer-events-auto relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/45 text-white shadow-[0_14px_36px_rgba(0,0,0,0.35)] backdrop-blur-xl transition hover:bg-black/60"
+            aria-label="Notifications"
+          >
+            <Bell size={18} />
+            {notificationCount > 0 ? (
+              <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-slate-950">
+                {notificationCount > 9 ? "9+" : notificationCount}
+              </span>
+            ) : null}
+          </button>
+        </Drawer.Trigger>
+      </div>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-[1250] bg-black/72 backdrop-blur-md" />
         <Drawer.Content

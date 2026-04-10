@@ -6,9 +6,13 @@ import { ArrowDown } from "lucide-react";
 
 import { ChatComposer } from "@/components/ChatComposer";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useSound } from "@/components/SoundProvider";
 import { UserAvatar } from "@/components/UserAvatar";
 import { apiPath, withBasePath } from "@/lib/app-paths";
 import { formatFeedDate } from "@/lib/format";
+
+const CHAT_BOTTOM_OFFSET = 144;
+const CHAT_NEAR_BOTTOM_THRESHOLD = 140;
 
 type ChatMessage = {
   id: string;
@@ -37,14 +41,21 @@ export function ChatThreadClient({
   initialMessages: ChatMessage[];
 }) {
   const { lang } = useLanguage();
+  const { playMessage } = useSound();
   const [messages, setMessages] = useState(initialMessages);
   const [hasUnreadBelow, setHasUnreadBelow] = useState(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
   const stickToBottomRef = useRef(true);
   const latestMessageIdRef = useRef(initialMessages.at(-1)?.id ?? "");
 
   function scrollToBottom(behavior: ScrollBehavior = "smooth") {
-    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.scrollTo({
+      top: Math.max(0, document.documentElement.scrollHeight - window.innerHeight - CHAT_BOTTOM_OFFSET),
+      behavior,
+    });
     setHasUnreadBelow(false);
   }
 
@@ -54,13 +65,11 @@ export function ChatThreadClient({
     }
 
     const distanceToBottom =
-      document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
+      document.documentElement.scrollHeight - CHAT_BOTTOM_OFFSET - (window.innerHeight + window.scrollY);
+    const isNearBottom = distanceToBottom < CHAT_NEAR_BOTTOM_THRESHOLD;
 
-    stickToBottomRef.current = distanceToBottom < 180;
-
-    if (stickToBottomRef.current) {
-      setHasUnreadBelow(false);
-    }
+    stickToBottomRef.current = isNearBottom;
+    setHasUnreadBelow(!isNearBottom);
   });
 
   const loadMessages = useEffectEvent(async () => {
@@ -86,8 +95,13 @@ export function ChatThreadClient({
       }
 
       const latestMessage = nextMessages.at(-1);
+      const incomingMessage = latestMessage?.userId !== currentUserId;
 
-      if (wasNearBottom || latestMessage?.userId === currentUserId) {
+      if (incomingMessage) {
+        playMessage();
+      }
+
+      if (wasNearBottom || !incomingMessage) {
         requestAnimationFrame(() => {
           scrollToBottom("smooth");
         });
@@ -99,6 +113,12 @@ export function ChatThreadClient({
       // Keep current thread state if polling fails.
     }
   });
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      scrollToBottom("auto");
+    });
+  }, []);
 
   useEffect(() => {
     updateStickiness();
@@ -116,12 +136,6 @@ export function ChatThreadClient({
 
     return () => clearInterval(interval);
   }, [chatId]);
-
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      scrollToBottom("auto");
-    });
-  }, []);
 
   return (
     <div className="space-y-5">
@@ -186,18 +200,23 @@ export function ChatThreadClient({
             </div>
           );
         })}
-        <div ref={bottomRef} />
+        <div className="h-px" />
       </div>
 
       {hasUnreadBelow ? (
-        <button
-          type="button"
-          onClick={() => scrollToBottom("smooth")}
-          className="sticky bottom-22 z-10 ml-auto inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold text-background shadow-[0_12px_28px_rgba(103,232,178,0.24)]"
+        <div
+          className="pointer-events-none fixed inset-x-0 z-40 mx-auto flex w-full max-w-md justify-center px-6"
+          style={{ bottom: "calc(env(safe-area-inset-bottom) + 6.5rem)" }}
         >
-          <ArrowDown size={16} />
-          К последним
-        </button>
+          <button
+            type="button"
+            onClick={() => scrollToBottom("smooth")}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold text-background shadow-[0_12px_28px_rgba(103,232,178,0.24)]"
+          >
+            <ArrowDown size={16} />
+            К последним
+          </button>
+        </div>
       ) : null}
 
       <ChatComposer

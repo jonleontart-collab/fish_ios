@@ -358,7 +358,7 @@ export function AddCatchForm({ places }: { places: PlaceOption[] }) {
 
   return (
     <div className="space-y-5 px-4 pb-8 pt-safe">
-      <header className="space-y-2">
+      <header className="pr-bell-safe space-y-2">
         <h1 className="font-display text-[30px] font-semibold tracking-tight text-text-main">{t.section}</h1>
         <p className="text-sm leading-6 text-text-muted">{t.title}</p>
       </header>

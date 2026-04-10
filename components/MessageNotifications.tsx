@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 import { useLanguage } from "@/components/LanguageProvider";
 import { useSound } from "@/components/SoundProvider";
@@ -10,6 +11,7 @@ import { getChatDisplayTitle, getMessagePreviewText } from "@/lib/chat";
 
 type InboxChat = {
   id: string;
+  slug: string;
   title: string;
   visibility: "OPEN" | "PRIVATE";
   isSystem: boolean;
@@ -36,7 +38,23 @@ type InboxChat = {
   }>;
 };
 
+function getActiveChatSlug(pathname: string | null) {
+  if (!pathname) {
+    return null;
+  }
+
+  const segments = pathname.split("/").filter(Boolean);
+  const chatsIndex = segments.lastIndexOf("chats");
+
+  if (chatsIndex === -1) {
+    return null;
+  }
+
+  return segments[chatsIndex + 1] ?? null;
+}
+
 export function MessageNotifications({ currentUserId }: { currentUserId: string }) {
+  const pathname = usePathname();
   const { pushToast } = useToast();
   const { playMessage } = useSound();
   const { lang } = useLanguage();
@@ -88,6 +106,10 @@ export function MessageNotifications({ currentUserId }: { currentUserId: string 
             continue;
           }
 
+          if (getActiveChatSlug(pathname) === chat.slug) {
+            continue;
+          }
+
           playMessage();
           pushToast({
             tone: "info",
@@ -113,7 +135,7 @@ export function MessageNotifications({ currentUserId }: { currentUserId: string 
       cancelled = true;
       clearInterval(interval);
     };
-  }, [currentUserId, lang, playMessage, pushToast]);
+  }, [currentUserId, lang, pathname, playMessage, pushToast]);
 
   return null;
 }

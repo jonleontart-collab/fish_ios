@@ -450,7 +450,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
     <div className={`flex flex-col min-h-[100vh] ${view === "map" ? "overflow-hidden" : ""}`}>
       
       {/* Search Header - Fixed at Top */}
-      <div className={`fixed top-0 inset-x-0 z-[100] pt-safe px-4 pb-2 transition-all ${view === "list" ? "bg-background/90 backdrop-blur-xl border-b border-white/5" : "bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none"}`}>
+      <div className={`pr-bell-safe fixed top-0 inset-x-0 z-[100] pt-safe px-4 pb-2 transition-all ${view === "list" ? "bg-background/90 backdrop-blur-xl border-b border-white/5" : "bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none"}`}>
          <div className="pointer-events-auto space-y-3 mt-2">
             <div className="relative">
               <input 
