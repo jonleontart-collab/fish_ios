@@ -104,7 +104,7 @@ export default async function Home() {
 
   return (
     <div className="pb-24 pt-safe sm:pt-6">
-      <header className="mb-4 flex items-center justify-between gap-4 px-4 py-3 pr-[3.5rem] sm:px-0">
+      <header className="mb-4 flex items-center justify-between gap-4 px-4 py-3 sm:px-0">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/8 bg-white/5 shadow-[0_12px_30px_rgba(0,0,0,0.25)]">
             <Image

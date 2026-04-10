@@ -450,9 +450,9 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
     <div className={`flex flex-col min-h-[100vh] ${view === "map" ? "overflow-hidden" : ""}`}>
       
       {/* Search Header - Fixed at Top */}
-      <div className={`pr-bell-safe fixed top-0 inset-x-0 z-[100] pt-safe px-4 pb-2 transition-all ${view === "list" ? "bg-background/90 backdrop-blur-xl border-b border-white/5" : "bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none"}`}>
+      <div className={`fixed top-0 inset-x-0 z-[100] pt-safe px-4 pb-2 transition-all ${view === "list" ? "bg-background/90 backdrop-blur-xl border-b border-white/5" : "bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none"}`}>
          <div className="pointer-events-auto space-y-3 mt-2">
-            <div className="relative">
+            <div className="relative pr-16">
               <input 
                 type="text" 
                 placeholder={t.searchPlaceholder}
@@ -468,7 +468,7 @@ export function ExploreShell({ places }: { places: ExplorePlace[] }) {
               />
               <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
               
-              <button suppressHydrationWarning onClick={() => void scanNearby({ query })} disabled={!location || isScanning} className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-primary hover:text-black transition disabled:opacity-50">
+              <button suppressHydrationWarning onClick={() => void scanNearby({ query })} disabled={!location || isScanning} className="absolute right-[4.25rem] top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-primary hover:text-black transition disabled:opacity-50">
                 {isScanning ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               </button>
             </div>

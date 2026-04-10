@@ -189,6 +189,10 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
     }
   }
 
+  if (!open && notificationCount === 0) {
+    return null;
+  }
+
   return (
     <Drawer.Root open={open} onOpenChange={handleOpenChange}>
       <div className="pointer-events-none fixed inset-x-0 top-safe z-[1200] mx-auto flex w-full max-w-md justify-end px-4">
