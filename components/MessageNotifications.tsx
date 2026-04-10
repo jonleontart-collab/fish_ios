@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { useLanguage } from "@/components/LanguageProvider";
+import { useSound } from "@/components/SoundProvider";
 import { useToast } from "@/components/ToastProvider";
 import { apiPath } from "@/lib/app-paths";
 import { getChatDisplayTitle, getMessagePreviewText } from "@/lib/chat";
@@ -37,6 +38,7 @@ type InboxChat = {
 
 export function MessageNotifications({ currentUserId }: { currentUserId: string }) {
   const { pushToast } = useToast();
+  const { playMessage } = useSound();
   const { lang } = useLanguage();
   const knownMessagesRef = useRef<Record<string, string>>({});
   const initializedRef = useRef(false);
@@ -86,6 +88,7 @@ export function MessageNotifications({ currentUserId }: { currentUserId: string 
             continue;
           }
 
+          playMessage();
           pushToast({
             tone: "info",
             title: getChatDisplayTitle(chat, currentUserId),
@@ -110,7 +113,7 @@ export function MessageNotifications({ currentUserId }: { currentUserId: string 
       cancelled = true;
       clearInterval(interval);
     };
-  }, [currentUserId, lang, pushToast]);
+  }, [currentUserId, lang, playMessage, pushToast]);
 
   return null;
 }
