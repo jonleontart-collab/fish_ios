@@ -2,6 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import Link from "next/link";
+import { ArrowDown } from "lucide-react";
 
 import { ChatComposer } from "@/components/ChatComposer";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -37,10 +38,34 @@ export function ChatThreadClient({
 }) {
   const { lang } = useLanguage();
   const [messages, setMessages] = useState(initialMessages);
+  const [hasUnreadBelow, setHasUnreadBelow] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const stickToBottomRef = useRef(true);
+  const latestMessageIdRef = useRef(initialMessages.at(-1)?.id ?? "");
+
+  function scrollToBottom(behavior: ScrollBehavior = "smooth") {
+    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+    setHasUnreadBelow(false);
+  }
+
+  const updateStickiness = useEffectEvent(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const distanceToBottom =
+      document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
+
+    stickToBottomRef.current = distanceToBottom < 180;
+
+    if (stickToBottomRef.current) {
+      setHasUnreadBelow(false);
+    }
+  });
 
   const loadMessages = useEffectEvent(async () => {
     try {
+      const wasNearBottom = stickToBottomRef.current;
       const response = await fetch(apiPath(`/api/chats/${chatId}/messages`), {
         cache: "no-store",
       });
@@ -50,11 +75,39 @@ export function ChatThreadClient({
       }
 
       const payload = (await response.json()) as { messages: ChatMessage[] };
-      setMessages(payload.messages ?? []);
+      const nextMessages = payload.messages ?? [];
+      const latestMessageId = nextMessages.at(-1)?.id ?? "";
+      const changed = latestMessageId && latestMessageId !== latestMessageIdRef.current;
+      latestMessageIdRef.current = latestMessageId;
+      setMessages(nextMessages);
+
+      if (!changed) {
+        return;
+      }
+
+      const latestMessage = nextMessages.at(-1);
+
+      if (wasNearBottom || latestMessage?.userId === currentUserId) {
+        requestAnimationFrame(() => {
+          scrollToBottom("smooth");
+        });
+        return;
+      }
+
+      setHasUnreadBelow(true);
     } catch {
       // Keep current thread state if polling fails.
     }
   });
+
+  useEffect(() => {
+    updateStickiness();
+    window.addEventListener("scroll", updateStickiness, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", updateStickiness);
+    };
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -65,8 +118,10 @@ export function ChatThreadClient({
   }, [chatId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length]);
+    requestAnimationFrame(() => {
+      scrollToBottom("auto");
+    });
+  }, []);
 
   return (
     <div className="space-y-5">
@@ -134,10 +189,25 @@ export function ChatThreadClient({
         <div ref={bottomRef} />
       </div>
 
+      {hasUnreadBelow ? (
+        <button
+          type="button"
+          onClick={() => scrollToBottom("smooth")}
+          className="sticky bottom-22 z-10 ml-auto inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold text-background shadow-[0_12px_28px_rgba(103,232,178,0.24)]"
+        >
+          <ArrowDown size={16} />
+          К последним
+        </button>
+      ) : null}
+
       <ChatComposer
         chatId={chatId}
         onMessageSent={(message) => {
+          latestMessageIdRef.current = message.id;
           setMessages((current) => [...current, message]);
+          requestAnimationFrame(() => {
+            scrollToBottom("smooth");
+          });
         }}
       />
     </div>

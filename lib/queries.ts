@@ -1,7 +1,7 @@
 import { subDays } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { splitPipeList } from "@/lib/format";
-import { getFriendsForUser } from "@/lib/social";
+import { getFriendsForUser, getIncomingFriendRequests } from "@/lib/social";
 import { ensureSupportChatForUser } from "@/lib/support";
 
 const REAL_PLACE_FILTER = {
@@ -889,7 +889,7 @@ export async function getTripsPageData() {
 export async function getProfilePageData() {
   const user = await getRequiredCurrentUser();
 
-  const [catchesRaw, trips, placePhotos, commentsCount, inventoryItems, shoppingItems, catchCount, tripCount, friends] =
+  const [catchesRaw, trips, placePhotos, commentsCount, inventoryItems, shoppingItems, catchCount, tripCount, friends, friendRequests] =
     await Promise.all([
       prisma.catch.findMany({
         where: { userId: user.id, place: REAL_PLACE_FILTER },
@@ -925,6 +925,7 @@ export async function getProfilePageData() {
       prisma.catch.count({ where: { userId: user.id, place: REAL_PLACE_FILTER } }),
       prisma.trip.count({ where: { userId: user.id, place: REAL_PLACE_FILTER } }),
       getFriendsForUser(user.id),
+      getIncomingFriendRequests(user.id),
     ]);
 
   const catches = catchesRaw.map((item) => mapCatchMedia(mapCatchWithEngagement(item)));
@@ -936,6 +937,7 @@ export async function getProfilePageData() {
     inventoryItems,
     shoppingItems,
     friends,
+    friendRequests,
     stats: {
       catches: catchCount,
       trips: tripCount,

@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { LocationProvider } from "@/components/LocationProvider";
 import { MessageNotifications } from "@/components/MessageNotifications";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import Onboarding from "@/components/Onboarding";
 import TabBar from "@/components/TabBar";
 import { ToastProvider } from "@/components/ToastProvider";
@@ -57,6 +58,7 @@ export default async function RootLayout({
                   </div>
 
                   <MessageNotifications currentUserId={user.id} />
+                  <NotificationCenter currentUserId={user.id} />
                   <main className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">{children}</main>
                   <TabBar />
                 </>

@@ -1,9 +1,11 @@
 import { getCurrentUser } from "@/lib/queries";
 import { prisma } from "@/lib/prisma";
-import { getFriendsForUser, toggleFriendship } from "@/lib/social";
+import { getFriendsForUser, getIncomingFriendRequests, updateFriendship } from "@/lib/social";
+
+type FriendAction = "request" | "cancel" | "remove" | "accept" | "decline";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   context: {
     params: Promise<{ handle: string }>;
   },
@@ -24,11 +26,17 @@ export async function POST(
     return Response.json({ error: "Target user not found." }, { status: 404 });
   }
 
-  const result = await toggleFriendship(user.id, target.id);
-  const friends = await getFriendsForUser(user.id);
+  const payload = (await request.json().catch(() => null)) as { action?: FriendAction } | null;
+  const action = payload?.action ?? "request";
+  const result = await updateFriendship(user.id, target.id, action);
+  const [friends, incomingRequests] = await Promise.all([
+    getFriendsForUser(user.id),
+    getIncomingFriendRequests(user.id),
+  ]);
 
   return Response.json({
     ...result,
     friendsCount: friends.length,
+    incomingRequestsCount: incomingRequests.length,
   });
 }

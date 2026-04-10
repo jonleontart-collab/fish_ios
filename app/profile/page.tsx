@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays, Trophy } from "lucide-react";
 
 import { CatchCard } from "@/components/CatchCard";
 import { FriendsPanel } from "@/components/FriendsPanel";
+import { FriendRequestsPanel } from "@/components/FriendRequestsPanel";
 import { InventoryManager } from "@/components/InventoryManager";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ProfileEditor } from "@/components/ProfileEditor";
@@ -265,6 +266,8 @@ export default async function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <FriendRequestsPanel initialRequests={profile.friendRequests} />
 
       <FriendsPanel
         title={t.friends}

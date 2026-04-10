@@ -16,7 +16,7 @@ import { type TranslationMap } from "@/lib/i18n";
 import { getServerLanguage } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/queries";
-import { areFriends, getFriendsForUser } from "@/lib/social";
+import { getFriendRelationship, getFriendsForUser } from "@/lib/social";
 
 export const dynamic = "force-dynamic";
 
@@ -231,9 +231,9 @@ export default async function PublicProfilePage({
     notFound();
   }
 
-  const [friends, isFriend] = await Promise.all([
+  const [friends, relationship] = await Promise.all([
     getFriendsForUser(user.id),
-    viewer ? areFriends(viewer.id, user.id) : false,
+    viewer ? getFriendRelationship(viewer.id, user.id) : Promise.resolve("none" as const),
   ]);
 
   const catches = user.catches.map((catchItem) => ({
@@ -318,7 +318,7 @@ export default async function PublicProfilePage({
 
           {viewer && viewer.id !== user.id ? (
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <FriendToggleButton handle={user.handle} initialIsFriend={isFriend} />
+              <FriendToggleButton handle={user.handle} initialRelationship={relationship} />
               <DirectChatButton handle={user.handle} />
             </div>
           ) : null}

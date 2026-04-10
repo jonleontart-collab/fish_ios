@@ -147,6 +147,10 @@ img {
   padding-top: max(1rem, env(safe-area-inset-top));
 }
 
+.top-safe {
+  top: max(1rem, env(safe-area-inset-top));
+}
+
 .hide-scrollbar {
   scrollbar-width: none;
 }

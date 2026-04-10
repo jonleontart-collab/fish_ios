@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
+export type FriendRelationship = "none" | "outgoing" | "incoming" | "accepted";
+
 export async function getFriendsForUser(userId: string) {
   const rows = await prisma.userFriend.findMany({
     where: {
@@ -29,25 +31,38 @@ export async function getFriendsForUser(userId: string) {
     });
 }
 
-export async function areFriends(userId: string, otherUserId: string) {
-  const relationship = await prisma.userFriend.findFirst({
+export async function getIncomingFriendRequests(userId: string) {
+  return prisma.userFriend.findMany({
     where: {
-      status: "ACCEPTED",
-      OR: [
-        { userId, friendId: otherUserId },
-        { userId: otherUserId, friendId: userId },
-      ],
+      friendId: userId,
+      status: "PENDING",
     },
-    select: {
-      id: true,
+    include: {
+      user: true,
+    },
+    orderBy: {
+      createdAt: "desc",
     },
   });
-
-  return Boolean(relationship);
 }
 
-export async function toggleFriendship(userId: string, otherUserId: string) {
-  const existing = await prisma.userFriend.findFirst({
+export async function getOutgoingFriendRequests(userId: string) {
+  return prisma.userFriend.findMany({
+    where: {
+      userId,
+      status: "PENDING",
+    },
+    include: {
+      friend: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
+
+export async function getFriendRelationship(userId: string, otherUserId: string): Promise<FriendRelationship> {
+  const rows = await prisma.userFriend.findMany({
     where: {
       OR: [
         { userId, friendId: otherUserId },
@@ -55,41 +70,125 @@ export async function toggleFriendship(userId: string, otherUserId: string) {
       ],
     },
     select: {
-      id: true,
+      userId: true,
+      friendId: true,
+      status: true,
     },
   });
 
-  if (existing) {
-    await prisma.userFriend.deleteMany({
-      where: {
-        OR: [
-          { userId, friendId: otherUserId },
-          { userId: otherUserId, friendId: userId },
-        ],
-      },
-    });
-
-    return { isFriend: false };
+  if (rows.some((row) => row.status === "ACCEPTED")) {
+    return "accepted";
   }
 
-  await prisma.$transaction([
-    prisma.userFriend.create({
+  if (rows.some((row) => row.userId === userId && row.friendId === otherUserId && row.status === "PENDING")) {
+    return "outgoing";
+  }
+
+  if (rows.some((row) => row.userId === otherUserId && row.friendId === userId && row.status === "PENDING")) {
+    return "incoming";
+  }
+
+  return "none";
+}
+
+export async function areFriends(userId: string, otherUserId: string) {
+  const relationship = await getFriendRelationship(userId, otherUserId);
+  return relationship === "accepted";
+}
+
+export async function updateFriendship(
+  userId: string,
+  otherUserId: string,
+  action: "request" | "cancel" | "remove" | "accept" | "decline",
+) {
+  const current = await getFriendRelationship(userId, otherUserId);
+
+  if (action === "request") {
+    if (current === "accepted") {
+      return { relationship: "accepted" as const };
+    }
+
+    if (current === "incoming") {
+      await prisma.userFriend.updateMany({
+        where: {
+          OR: [
+            { userId: otherUserId, friendId: userId, status: "PENDING" },
+            { userId, friendId: otherUserId, status: "PENDING" },
+          ],
+        },
+        data: {
+          status: "ACCEPTED",
+        },
+      });
+
+      return { relationship: "accepted" as const };
+    }
+
+    if (current === "outgoing") {
+      return { relationship: "outgoing" as const };
+    }
+
+    await prisma.userFriend.create({
       data: {
         userId,
         friendId: otherUserId,
-        status: "ACCEPTED",
+        status: "PENDING",
       },
-    }),
-    prisma.userFriend.create({
-      data: {
+    });
+
+    return { relationship: "outgoing" as const };
+  }
+
+  if (action === "cancel") {
+    await prisma.userFriend.deleteMany({
+      where: {
+        userId,
+        friendId: otherUserId,
+        status: "PENDING",
+      },
+    });
+
+    return { relationship: "none" as const };
+  }
+
+  if (action === "decline") {
+    await prisma.userFriend.deleteMany({
+      where: {
         userId: otherUserId,
         friendId: userId,
+        status: "PENDING",
+      },
+    });
+
+    return { relationship: "none" as const };
+  }
+
+  if (action === "accept") {
+    await prisma.userFriend.updateMany({
+      where: {
+        OR: [
+          { userId: otherUserId, friendId: userId, status: "PENDING" },
+          { userId, friendId: otherUserId, status: "PENDING" },
+        ],
+      },
+      data: {
         status: "ACCEPTED",
       },
-    }),
-  ]);
+    });
 
-  return { isFriend: true };
+    return { relationship: "accepted" as const };
+  }
+
+  await prisma.userFriend.deleteMany({
+    where: {
+      OR: [
+        { userId, friendId: otherUserId },
+        { userId: otherUserId, friendId: userId },
+      ],
+    },
+  });
+
+  return { relationship: "none" as const };
 }
 
 export async function getOrCreateDirectChat(userId: string, otherUserId: string) {
