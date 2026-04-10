@@ -149,7 +149,6 @@ export default async function ChatsPage() {
       <header className="pr-bell-safe flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="font-display text-[32px] font-bold tracking-tight text-white drop-shadow-sm">{t.title}</h1>
-          <p className="text-[15px] font-medium text-text-muted">{t.subtitle}</p>
         </div>
 
         <FriendsDrawer title={t.friends} subtitle={t.friends} friends={data.friends}>

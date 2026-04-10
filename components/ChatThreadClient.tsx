@@ -10,6 +10,7 @@ import { useSound } from "@/components/SoundProvider";
 import { UserAvatar } from "@/components/UserAvatar";
 import { apiPath, withBasePath } from "@/lib/app-paths";
 import { formatFeedDate } from "@/lib/format";
+import { markNotificationsSeen } from "@/lib/notification-state";
 
 const CHAT_BOTTOM_OFFSET = 144;
 const CHAT_NEAR_BOTTOM_THRESHOLD = 140;
@@ -136,6 +137,18 @@ export function ChatThreadClient({
 
     return () => clearInterval(interval);
   }, [chatId]);
+
+  useEffect(() => {
+    const latestMessage = messages.at(-1);
+
+    if (!latestMessage) {
+      return;
+    }
+
+    markNotificationsSeen(currentUserId, {
+      chats: [{ chatId, messageId: latestMessage.id }],
+    });
+  }, [chatId, currentUserId, messages]);
 
   return (
     <div className="space-y-5">

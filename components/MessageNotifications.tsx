@@ -8,6 +8,7 @@ import { useSound } from "@/components/SoundProvider";
 import { useToast } from "@/components/ToastProvider";
 import { apiPath } from "@/lib/app-paths";
 import { getChatDisplayTitle, getMessagePreviewText } from "@/lib/chat";
+import { markNotificationsSeen } from "@/lib/notification-state";
 
 type InboxChat = {
   id: string;
@@ -107,6 +108,9 @@ export function MessageNotifications({ currentUserId }: { currentUserId: string 
           }
 
           if (getActiveChatSlug(pathname) === chat.slug) {
+            markNotificationsSeen(currentUserId, {
+              chats: [{ chatId: chat.id, messageId: latestMessage.id }],
+            });
             continue;
           }
 

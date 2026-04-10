@@ -127,7 +127,6 @@ export default async function FeedPage() {
       <header className="pr-bell-safe space-y-4">
         <SectionHeader
           title={t.title}
-          description={t.subtitle}
           action={
             <Link
               href="/profile"

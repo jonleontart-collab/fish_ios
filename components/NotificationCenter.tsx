@@ -11,6 +11,12 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { useToast } from "@/components/ToastProvider";
 import { apiPath, withBasePath } from "@/lib/app-paths";
 import { getChatDisplayTitle, getMessagePreviewText } from "@/lib/chat";
+import {
+  markNotificationsSeen,
+  readNotificationSeenState,
+  subscribeToNotificationState,
+  type NotificationSeenState,
+} from "@/lib/notification-state";
 
 type NotificationRequest = {
   id: string;
@@ -61,8 +67,18 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
   const [actionKey, setActionKey] = useState("");
   const [friendRequests, setFriendRequests] = useState<NotificationRequest[]>([]);
   const [chats, setChats] = useState<NotificationChat[]>([]);
-  const notificationCount =
-    friendRequests.length + chats.filter((chat) => chat.messages[0] && chat.messages[0].user.id !== currentUserId).length;
+  const [drawerChats, setDrawerChats] = useState<NotificationChat[]>([]);
+  const [seenState, setSeenState] = useState<NotificationSeenState>({
+    chats: {},
+    requests: {},
+  });
+
+  const unreadChats = chats.filter((chat) => {
+    const latestMessage = chat.messages[0];
+    return latestMessage && latestMessage.user.id !== currentUserId && seenState.chats[chat.id] !== latestMessage.id;
+  });
+  const unseenRequestCount = friendRequests.filter((request) => !seenState.requests[request.id]).length;
+  const notificationCount = open ? 0 : unseenRequestCount + unreadChats.length;
 
   async function loadNotifications() {
     setLoading(true);
@@ -89,6 +105,11 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
   }
 
   useEffect(() => {
+    setSeenState(readNotificationSeenState(currentUserId));
+    return subscribeToNotificationState(currentUserId, setSeenState);
+  }, [currentUserId]);
+
+  useEffect(() => {
     void loadNotifications();
 
     const interval = setInterval(() => {
@@ -97,6 +118,39 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
 
     return () => clearInterval(interval);
   }, []);
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
+      setDrawerChats(unreadChats);
+      setOpen(true);
+      return;
+    }
+
+    if (open) {
+      setSeenState(
+        markNotificationsSeen(currentUserId, {
+          chats: drawerChats
+            .map((chat) => {
+              const latestMessage = chat.messages[0];
+
+              if (!latestMessage) {
+                return null;
+              }
+
+              return {
+                chatId: chat.id,
+                messageId: latestMessage.id,
+              };
+            })
+            .filter((entry): entry is { chatId: string; messageId: string } => Boolean(entry)),
+          requestIds: friendRequests.filter((request) => !seenState.requests[request.id]).map((request) => request.id),
+        }),
+      );
+    }
+
+    setDrawerChats([]);
+    setOpen(false);
+  }
 
   async function handleRequest(handle: string, action: "accept" | "decline") {
     const key = `${handle}:${action}`;
@@ -123,7 +177,7 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
       router.refresh();
       pushToast({
         tone: "success",
-        title: action === "accept" ? "Запрос принят" : "Запрос отклонен",
+        title: action === "accept" ? "Запрос принят" : "Запрос отклонён",
       });
     } catch {
       pushToast({
@@ -136,7 +190,7 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
   }
 
   return (
-    <Drawer.Root open={open} onOpenChange={setOpen}>
+    <Drawer.Root open={open} onOpenChange={handleOpenChange}>
       <div className="pointer-events-none fixed inset-x-0 top-safe z-[1200] mx-auto flex w-full max-w-md justify-end px-4">
         <Drawer.Trigger asChild>
           <button
@@ -244,14 +298,14 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
               <section className="space-y-3">
                 <div className="flex items-center gap-2 text-sm font-semibold text-white">
                   <MessageSquareText size={16} className="text-accent" />
-                  Последние чаты
+                  Новое в чатах
                 </div>
-                {loading && chats.length === 0 ? (
+                {loading && drawerChats.length === 0 ? (
                   <div className="rounded-[24px] border border-dashed border-white/10 bg-black/20 px-5 py-6 text-sm text-text-muted">
                     Загружаем уведомления...
                   </div>
-                ) : chats.length > 0 ? (
-                  chats.map((chat) => {
+                ) : drawerChats.length > 0 ? (
+                  drawerChats.map((chat) => {
                     const latestMessage = chat.messages[0];
 
                     return (
@@ -272,7 +326,7 @@ export function NotificationCenter({ currentUserId }: { currentUserId: string })
                   })
                 ) : (
                   <div className="rounded-[24px] border border-dashed border-white/10 bg-black/20 px-5 py-6 text-sm text-text-muted">
-                    Пока нет активных уведомлений по чатам.
+                    Пока нет новых событий по чатам.
                   </div>
                 )}
               </section>
